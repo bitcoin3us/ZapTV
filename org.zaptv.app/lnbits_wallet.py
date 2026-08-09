@@ -1,0 +1,230 @@
+import json
+
+from uaiowebsocket import WebSocketApp
+
+from mpos import TaskManager, DownloadManager
+
+from wallet import Wallet
+from payment import Payment
+from unique_sorted_list import UniqueSortedList
+
+class LNBitsWallet(Wallet):
+
+    PAYMENTS_TO_SHOW = 8
+    PERIODIC_FETCH_BALANCE_SECONDS = 120 # seconds — LNBits websocket pushes cover real-time payments, this poll is a heartbeat / silent-disconnect check
+
+    ws = None
+
+    def __init__(self, lnbits_url, lnbits_readkey):
+        super().__init__()
+        # Per-instance cleanup flag (base class defaults to True; we flip it
+        # during stop() while the async ws.close() is in flight).
+        self._cleanup_done = True
+        if not lnbits_url:
+            raise ValueError('LNBits URL is not set.')
+        elif not lnbits_readkey:
+            raise ValueError('LNBits Read Key is not set.')
+        self.lnbits_url = lnbits_url.rstrip('/')
+        self.lnbits_readkey = lnbits_readkey
+        # Cache slot identity — fingerprints are stamped on by DisplayWallet
+        # after construction (they depend on prefs, not just wallet state).
+        self.slot_key = "lnbits"
+
+    def stop(self):
+        """Stop the wallet AND eagerly close the payment-notification
+        websocket so a quick restart (e.g. user switched wallet_type in
+        Settings → came back) doesn't race against a still-open socket.
+        The base Wallet.stop() just flips keep_running=False and relies on
+        the main loop to notice on its next 100ms sleep tick — too slow on
+        ESP32 where the TCP socket pool is small and the new wallet's
+        connections fail if the old ws is still open."""
+        super().stop()  # sets keep_running = False
+        if self.ws is not None and self._cleanup_done:
+            self._cleanup_done = False
+            TaskManager.create_task(self._close_ws())
+
+    async def _close_ws(self):
+        try:
+            await self.ws.close()
+        except Exception as e:
+            print("LNBitsWallet: error closing websocket: {}".format(e))
+        self._cleanup_done = True
+
+    def parseLNBitsPayment(self, transaction):
+        amount = transaction["amount"]
+        amount = round(amount / 1000)
+        comment = transaction["memo"]
+        epoch_time = transaction["time"]
+        try:
+            extra = transaction.get("extra")
+            if extra:
+                comment = extra.get("comment")
+                first_from_list = comment.get(0) # some LNBits 0.x versions return a list instead of a string here...
+                comment = first_from_list # if the above threw exception, it will catch below
+        except Exception as e:
+            pass
+        comment = super().try_parse_as_zap(comment)
+        return Payment(epoch_time, amount, comment)
+
+    # Example data: {"wallet_balance": 4936, "payment": {"checking_id": "037c14...56b3", "pending": false, "amount": 1000000, "fee": 0, "memo": "zap2oink", "time": 1711226003, "bolt11": "lnbc10u1pjl70y....qq9renr", "preimage": "0000...000", "payment_hash": "037c1438b20ef4729b1d3dc252c2809dc2a2a2e641c7fb99fe4324e182f356b3", "expiry": 1711226603.0, "extra": {"tag": "lnurlp", "link": "TkjgaB", "extra": "1000000", "comment": ["yes"], "lnaddress": "oink@demo.lnpiggy.com"}, "wallet_id": "c9168...8de4", "webhook": null, "webhook_status": null}}
+    def on_message(self, class_obj, message: str):
+        print(f"wallet.py _on_message received: {message}")
+        try:
+            payment_notification = json.loads(message)
+            try:
+                new_balance = int(payment_notification.get("wallet_balance"))
+            except Exception as e:
+                print("wallet.py on_message got exception while parsing balance: {e}")
+            if new_balance:
+                self.handle_new_balance(new_balance, False) # refresh balance on display BUT don't trigger a full fetch_payments
+                transaction = payment_notification.get("payment")
+                print(f"Got transaction: {transaction}")
+                paymentObj = self.parseLNBitsPayment(transaction)
+                self.handle_new_payment(paymentObj)
+        except Exception as e:
+            print(f"websocket on_message got exception: {e}")
+
+    async def async_wallet_manager_task(self):
+        websocket_running = False
+        while self.keep_running:
+            try:
+                new_balance = await self.fetch_balance()
+            except Exception as e:
+                print(f"WARNING: wallet_manager_thread got exception: {e}")
+                import sys
+                sys.print_exception(e)
+                self.handle_error(e)
+            if not self.static_receive_code:
+                # Guard this fetch the same way as fetch_balance above.
+                # fetch_static_receive_code raises RuntimeError on any network
+                # error (5xx, timeout, DNS glitch) — without this try/except a
+                # single bad response tears the main poll loop out of its
+                # `while self.keep_running:` guard and the task exits. Nothing
+                # restarts it, so the wallet appears frozen until the user
+                # reopens the app (or the device reboots). Caught errors are
+                # surfaced via handle_error like the balance path; the loop
+                # then continues to the sleep tick and tries again next cycle.
+                try:
+                    static_receive_code = await self.fetch_static_receive_code()
+                    if static_receive_code:
+                        self.handle_new_static_receive_code(static_receive_code)
+                except Exception as e:
+                    print(f"WARNING: wallet_manager_thread fetch_static_receive_code got exception: {e}")
+                    import sys
+                    sys.print_exception(e)
+                    self.handle_error(e)
+            if not websocket_running and self.keep_running: # after the other things, listen for incoming payments
+                websocket_running = True
+                print("Opening websocket for payment notifications...")
+                wsurl = self.lnbits_url + "/api/v1/ws/" + self.lnbits_readkey
+                wsurl = wsurl.replace("https://", "wss://")
+                wsurl = wsurl.replace("http://", "ws://")
+                try:
+                    self.ws = WebSocketApp(
+                        wsurl,
+                        on_message=self.on_message,
+                    ) # maybe add other callbacks to reconnect when disconnected etc.
+                    TaskManager.create_task(self.ws.run_forever(),)
+                except Exception as e:
+                    print(f"Got exception while creating task for LNBitsWallet websocket: {e}")
+            print("Sleeping a while before re-fetching balance...")
+            for _ in range(self.PERIODIC_FETCH_BALANCE_SECONDS*10):
+                await TaskManager.sleep(0.1)
+                if not self.keep_running:
+                    break
+        # Websocket is closed by stop() via _close_ws(), scheduled the
+        # moment stop() was called. No redundant close here.
+        print("LNBitsWallet main() stopping")
+
+    async def fetch_balance(self):
+        walleturl = self.lnbits_url + "/api/v1/wallet"
+        headers = {
+            "X-Api-Key": self.lnbits_readkey,
+        }
+        try:
+            print(f"Fetching balance with GET to {walleturl}")
+            response_bytes = await DownloadManager.download_url(walleturl, headers=headers)
+        except Exception as e:
+            # Don't include the readkey in the error — error_cb renders this
+            # string on the payments label, so a failed fetch would display
+            # the API key on-device.
+            raise RuntimeError(f"fetch_balance: GET {walleturl} failed: {e}")
+        if response_bytes and self.keep_running:
+            response_text = response_bytes.decode('utf-8')
+            print(f"Got response text: {response_text}")
+            try:
+                balance_reply = json.loads(response_text)
+            except Exception as e:
+                raise RuntimeError(f"Could not parse reponse '{response_text}' as JSON: {e}")
+            try:
+                balance_msat = int(balance_reply.get("balance"))
+            except Exception as e:
+                raise RuntimeError(f"Could not parse balance: {e}")
+            if balance_msat is not None:
+                print(f"balance_msat: {balance_msat}")
+                new_balance = round(balance_msat / 1000)
+                self.handle_new_balance(new_balance)
+                # Signal "we polled successfully" regardless of whether the
+                # balance actually changed. Without this the stale-data
+                # indicator would never reset on a healthy-but-quiet wallet
+                # (balance unchanged = no balance_updated_cb = no UI reset).
+                self.notify_poll_success()
+            else:
+                error = balance_reply.get("detail")
+                if error:
+                    raise RuntimeError(f"LNBits backend replied: {error}")
+
+    async def fetch_payments(self):
+        paymentsurl = self.lnbits_url + "/api/v1/payments?limit=" + str(self.PAYMENTS_TO_SHOW)
+        headers = {
+            "X-Api-Key": self.lnbits_readkey,
+        }
+        try:
+            print(f"Fetching payments with GET to {paymentsurl}")
+            response_bytes = await DownloadManager.download_url(paymentsurl, headers=headers)
+        except Exception as e:
+            # See fetch_balance: scrub readkey from user-visible error.
+            raise RuntimeError(f"fetch_payments: GET {paymentsurl} failed: {e}")
+        if response_bytes and self.keep_running:
+            response_text = response_bytes.decode('utf-8')
+            #print(f"Got response text: {response_text}")
+            try:
+                payments_reply = json.loads(response_text)
+            except Exception as e:
+                raise RuntimeError(f"Could not parse reponse '{response_text}' as JSON: {e}")
+            print(f"Got payments: {payments_reply}")
+            if len(payments_reply) == 0:
+                self.handle_new_payment(Payment(1751987292, 0, "Time to Start Stacking!"))
+            else:
+                new_payment_list = UniqueSortedList()
+                for transaction in payments_reply:
+                    print(f"Got transaction: {transaction}")
+                    paymentObj = self.parseLNBitsPayment(transaction)
+                    new_payment_list.add(paymentObj)
+                self.handle_new_payments(new_payment_list)
+
+    async def fetch_static_receive_code(self):
+        url = self.lnbits_url + "/lnurlp/api/v1/links?all_wallets=false"
+        headers = {
+            "X-Api-Key": self.lnbits_readkey,
+        }
+        try:
+            print(f"Fetching static_receive_code with GET to {url}")
+            response_bytes = await DownloadManager.download_url(url, headers=headers)
+        except Exception as e:
+            # See fetch_balance: scrub readkey from user-visible error.
+            raise RuntimeError(f"fetch_static_receive_code: GET {url} failed: {e}")
+        if response_bytes and self.keep_running:
+            response_text = response_bytes.decode('utf-8')
+            print(f"Got response text: {response_text}")
+            try:
+                reply_object = json.loads(response_text)
+            except Exception as e:
+                raise RuntimeError(f"Could not parse reponse '{response_text}' as JSON: {e}")
+            print(f"Got links: {reply_object}")
+            for link in reply_object:
+                print(f"Got link: {link}")
+                return link.get("lnurl")
+        else:
+            print(f"Fetching static receive code got no response or not self.keep_running")
+            self.handle_error("No static receive code found on server")
