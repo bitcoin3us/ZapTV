@@ -2,3 +2,7 @@ runtime/
 .DS_Store
 __pycache__/
 *.mpy
+dist/*.mpk
+dist/*.png
+*.token
+.env
