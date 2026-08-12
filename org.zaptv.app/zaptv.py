@@ -150,7 +150,7 @@ NOSTR_PROFILE_RELAY = "wss://relay.damus.io"
 IMG_PROXY_URL = "https://wsrv.nl/?url={url}&w=128&h=128&output=jpg"
 
 
-def _add_back_button(screen, on_back):
+def _add_back_button(screen, on_back, color=None):
     """Floating back button at the bottom-right of a settings screen — the
     same pattern Lightning Piggy uses. Tapping it finishes the activity,
     returning to the previous screen. FLOATING keeps it out of the screen's
@@ -167,6 +167,12 @@ def _add_back_button(screen, on_back):
     icon = lv.label(btn)
     icon.set_text(lv.SYMBOL.LEFT)
     icon.set_style_text_font(lv.font_montserrat_24, lv.PART.MAIN)
+    # Screens that paint their own background (About) must say which colour
+    # the chevron should be: inheriting the theme's white text left it
+    # invisible against a light-mode background. Settings screens keep the
+    # theme default by passing nothing.
+    if color is not None:
+        icon.set_style_text_color(color, lv.PART.MAIN)
     icon.center()
     _register_focusable(btn)
 
@@ -191,6 +197,7 @@ class AboutActivity(Activity):
 
     WEB_ADDRESS = "www.ZapTV.org"
     CREDIT = "A fully open-source app by Richard Nakamoto"
+    LOGO_HEIGHT = 68
 
     def onCreate(self):
         extras = self.getIntent().extras or {}
@@ -209,6 +216,10 @@ class AboutActivity(Activity):
         screen.set_flex_flow(lv.FLEX_FLOW.COLUMN)
         screen.set_flex_align(lv.FLEX_ALIGN.START, lv.FLEX_ALIGN.CENTER,
                               lv.FLEX_ALIGN.CENTER)
+        # The default row gap plus each label's own margin left the last line
+        # below the fold on a 240 px screen; 4 px of flex gap keeps the whole
+        # screen visible without scrolling.
+        screen.set_style_pad_row(4, lv.PART.MAIN)
         screen.set_scroll_dir(lv.DIR.VER)
         screen.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 
@@ -217,6 +228,12 @@ class AboutActivity(Activity):
         logo = lv.image(screen)
         logo.set_src("M:apps/" + self._fullname() + "/res/splash_"
                      + ("dark" if dark else "light") + ".png")
+        # Box the artwork and let CONTAIN scale it down to fit. At its native
+        # ~96 px the logo pushed the last line off a 240 px screen, and the
+        # credit at the bottom is only worth adding if it can be read without
+        # scrolling for it.
+        logo.set_size(lv.pct(100), self.LOGO_HEIGHT)
+        logo.set_inner_align(lv.image.ALIGN.CONTAIN)
 
         for text in ("ZapTV " + self._app_version(),
                      "MicroPythonOS " + self._os_version(),
@@ -224,6 +241,12 @@ class AboutActivity(Activity):
                      self.WEB_ADDRESS):
             lbl = lv.label(screen)
             lbl.set_text(text)
+            # Hardware ids are long ("waveshare_esp32_s3_touch_lcd_2") and were
+            # being clipped at both edges, so every line wraps rather than
+            # running off the display.
+            lbl.set_width(lv.pct(100))
+            lbl.set_long_mode(lv.label.LONG_MODE.WRAP)
+            lbl.set_style_text_align(lv.TEXT_ALIGN.CENTER, lv.PART.MAIN)
             lbl.set_style_text_font(lv.font_montserrat_14, lv.PART.MAIN)
             lbl.set_style_text_color(fg, lv.PART.MAIN)
             lbl.set_style_margin_top(4, lv.PART.MAIN)
@@ -239,13 +262,14 @@ class AboutActivity(Activity):
         credit.set_style_text_font(lv.font_montserrat_12, lv.PART.MAIN)
         credit.set_style_text_color(fg, lv.PART.MAIN)
         credit.set_style_text_opa(lv.OPA._70, lv.PART.MAIN)
-        credit.set_style_margin_top(12, lv.PART.MAIN)
+        credit.set_style_margin_top(8, lv.PART.MAIN)
 
+        self._fg = fg
         self.setContentView(screen)
 
     def onResume(self, screen):
         super().onResume(screen)
-        _add_back_button(screen, self.finish)
+        _add_back_button(screen, self.finish, color=self._fg)
 
     def _fullname(self):
         # appFullName is set by the navigator; fall back for safety since a
