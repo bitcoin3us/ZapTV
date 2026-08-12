@@ -190,6 +190,7 @@ class AboutActivity(Activity):
     """
 
     WEB_ADDRESS = "www.ZapTV.org"
+    CREDIT = "A fully open-source app by Richard Nakamoto"
 
     def onCreate(self):
         extras = self.getIntent().extras or {}
@@ -226,6 +227,19 @@ class AboutActivity(Activity):
             lbl.set_style_text_font(lv.font_montserrat_14, lv.PART.MAIN)
             lbl.set_style_text_color(fg, lv.PART.MAIN)
             lbl.set_style_margin_top(4, lv.PART.MAIN)
+
+        # Credit line. Too long for one 320 px row, so unlike the lines above
+        # it wraps and is set a size smaller to keep the version block the
+        # focus of the screen.
+        credit = lv.label(screen)
+        credit.set_text(self.CREDIT)
+        credit.set_width(lv.pct(100))
+        credit.set_long_mode(lv.label.LONG_MODE.WRAP)
+        credit.set_style_text_align(lv.TEXT_ALIGN.CENTER, lv.PART.MAIN)
+        credit.set_style_text_font(lv.font_montserrat_12, lv.PART.MAIN)
+        credit.set_style_text_color(fg, lv.PART.MAIN)
+        credit.set_style_text_opa(lv.OPA._70, lv.PART.MAIN)
+        credit.set_style_margin_top(12, lv.PART.MAIN)
 
         self.setContentView(screen)
 

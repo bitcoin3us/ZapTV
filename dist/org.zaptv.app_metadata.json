@@ -11,17 +11,17 @@
   ],
   "license_type": "MIT",
   "name": "ZapTV",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "git_url": "https://github.com/bitcoin3us/ZapTV",
   "description": "Nostr-native zap display for your npub.",
   "long_description": "Connect an LNbits, Nostr Wallet Connect, or on-chain (xpub) wallet and ZapTV shows your most recent zaps with a lightning-strike effect, alongside your Nostr profile picture and a receive QR for your npub.cash Lightning address. Display-only: it holds no keys and shows no balance, so it is safe to leave running in public.",
   "icon_map": {
-    "64x64": "org.zaptv.app_0.3.1_64x64.png"
+    "64x64": "org.zaptv.app_0.3.2_64x64.png"
   },
   "application": [
     {
       "type": "micropython",
-      "executable": "org.zaptv.app_0.3.1.mpk"
+      "executable": "org.zaptv.app_0.3.2.mpk"
     }
   ]
 }
