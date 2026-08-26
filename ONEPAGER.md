@@ -1,11 +1,11 @@
-# ZapTV! &amp; BlockTV!
+# ZapTV! &amp; BlockTV
 
 **Bitcoin television, on your desk.** Two apps for [MicroPythonOS](https://micropythonos.com) that turn a $20 pocket-sized screen into an always-on Bitcoin display. From [ZapTV.org](https://www.zaptv.org).
 
 | | |
 |---|---|
 | ![ZapTV main screen](promo/promo_main.png) | ![BlockTV 24-hour chart](promo/blocktv_chart.png) |
-| **ZapTV!** watches your zaps | **BlockTV!** watches the network |
+| **ZapTV!** watches your zaps | **BlockTV** watches the network |
 
 ## ZapTV! (`org.zaptv.app`)
 
@@ -17,7 +17,7 @@ The first Nostr-native app on MicroPythonOS: a Lightning zap display built aroun
 - **Your feed, your rules**: show 1 to 21 recent transactions, sorted by newest or largest; zap comments render with full emoji support
 - **Safe in public**: display-only, no keys held, no balance shown, xpubs redacted from logs
 
-## BlockTV! (`org.zaptv.blocktv`)
+## BlockTV (`org.zaptv.blocktv`)
 
 A fully customisable Bitcoin dashboard: compose your own pages from sixteen data fields and let the numbers roll odometer-style.
 
