@@ -125,18 +125,17 @@ header.hero { padding: 56px 0 30px; text-align: center; }
 }
 @media (max-width: 760px) { .hero-tvs { grid-template-columns: 1fr; max-width: 440px; } }
 .hero-set { margin: 0; }
-.chan-row { display: flex; gap: 10px; justify-content: center; padding-top: 12px; }
-.chan {
-  display: inline-flex; align-items: baseline; gap: 6px; text-decoration: none;
-  font-family: 'Montserrat', system-ui, sans-serif; font-size: 12.5px; letter-spacing: .05em;
-  color: #b3ac97; border: 1px solid #35302a; border-radius: 999px; padding: 5px 14px;
-}
-.chan b { font-weight: 600; }
-.chan:hover { border-color: #b3ac97; }
-.chan-row .chan.on { background: #ffd400; border-color: #ffd400; color: #171410; }
-.chan-row.btc .chan.on { background: #f7931a; border-color: #f7931a; }
 .hero-npub { margin-top: 16px; }
 .hero-set .demo-status { text-align: center; }
+
+.hero-tvs { position: relative; }
+@media (min-width: 761px) { .hero-tvs::before { content: ""; position: absolute; left: 50%; top: 6%; bottom: 6%; width: 1px; background: var(--line); } }
+.zap-try { margin-top: 64px; display: flex; flex-direction: column; align-items: center; }
+.zap-try h3 { font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); font-weight: 600; }
+.zap-try .tagline { margin: 10px auto 24px; max-width: 520px; }
+.zap-try .tvset { width: 100%; max-width: 400px; }
+.zap-try .npub-form { width: 100%; max-width: 400px; margin-top: 18px; }
+.zap-try .demo-status { text-align: center; }
 
 /* ---- channel bands ---- */
 section.channel { border-top: 1px solid var(--line); padding: 72px 0; }
@@ -293,6 +292,7 @@ section.channel { border-top: 1px solid var(--line); padding: 72px 0; }
 #btvGrid.l2 { grid-template: 1fr 1fr / 1fr; }
 #btvGrid.l4 { grid-template: 1fr 1fr / 1fr 1fr; }
 #btvGrid.l8 { grid-template: repeat(4, 1fr) / 1fr 1fr; }
+#btvGrid.l10 { grid-template: repeat(5, 1fr) / 1fr 1fr; gap: 0.4cqw 4cqw; }
 .btv-tile { border: none; background: none; padding: 0; text-align: center; color: inherit; font: inherit; cursor: pointer; overflow: hidden; }
 .btv-tile:focus-visible { outline: 1px solid var(--btv-fg, #fff); outline-offset: -1px; }
 .btv-title { display: block; text-align: left; color: color-mix(in srgb, var(--btv-fg, #fff) 55%, transparent); font-size: 3.2cqw; letter-spacing: .18em; font-weight: 600; }
@@ -303,6 +303,7 @@ section.channel { border-top: 1px solid var(--line); padding: 72px 0; }
 .l2 .btv-value { font-size: 13cqw; }
 .l4 .btv-value { font-size: 9.2cqw; }
 .l8 .btv-value { font-size: 6.4cqw; } .l8 .btv-title { font-size: 2.5cqw; } .l8 .btv-unit { font-size: 2.4cqw; }
+.l10 .btv-value { font-size: 5.1cqw; } .l10 .btv-title { font-size: 2.3cqw; } .l10 .btv-unit { font-size: 2.1cqw; }
 /* the chart page */
 #btvChartPage { padding: 2.5cqw 3cqw 0; }
 .btv-chart-head { display: flex; justify-content: space-between; align-items: baseline; }
@@ -403,30 +404,22 @@ footer .wrap { display: grid; gap: 8px; }
   <p class="lede">Two little channels for a screen that fits in one hand: watch your zaps roll in on ZapTV!, or keep the whole Bitcoin network on air with BlockTV.</p>
   <div class="hero-tvs">
     <figure class="tvset hero-set">
-      <div class="tv"><div class="screen demo-screen" id="demoScreen">
-          <div class="dz-off" id="dzOff">
-            <div class="dz-noise"></div>
-            <span>NO SIGNAL</span>
-          </div>
-          <div class="dz-app" id="dzApp" hidden>
-            <div class="dz-list" id="dzList"></div>
+      <div class="tv"><div class="screen demo-screen" id="heroZapScreen">
+          <div class="dz-off"><div class="dz-noise"></div><span>NO SIGNAL</span></div>
+          <div class="dz-app" hidden>
+            <div class="dz-list"></div>
             <div class="dz-side">
-              <div class="dz-pic" id="dzPic"></div>
-              <div class="dz-name" id="dzName"></div>
-              <canvas class="dz-qr" id="dzQr" width="106" height="106"></canvas>
+              <div class="dz-pic"></div>
+              <div class="dz-name"></div>
+              <canvas class="dz-qr" width="106" height="106"></canvas>
             </div>
           </div>
-          <div class="dz-flash" id="dzFlash"></div>
-          <svg class="dz-bolt" id="dzBolt" viewBox="0 0 320 240" preserveAspectRatio="none"></svg>
+          <div class="dz-flash"></div>
+          <svg class="dz-bolt" viewBox="0 0 320 240" preserveAspectRatio="none"></svg>
         </div>
-        <div class="chan-row"><a class="chan on" href="#zaptv"><b>1</b> ZapTV!</a><a class="chan" href="#blocktv"><b>2</b> BlockTV</a></div>
       <span class="led"></span></div>
       <div class="stand"></div>
-      <form class="npub-form hero-npub" id="npubForm" autocomplete="off">
-        <input type="text" id="npubInput" spellcheck="false" placeholder="npub1&hellip;" aria-label="Show another npub">
-        <button type="submit" class="btn btn-primary" id="npubGo">Tune in</button>
-      </form>
-      <p class="demo-status" id="demoStatus">Live: your zaps, this screen. Paste any npub, or <a href="#" id="demoSample">watch a sample</a>.</p>
+      <p class="demo-status" id="heroZapStatus">Tuning&hellip;</p>
     </figure>
     <figure class="tvset hero-set">
       <div class="tv"><div class="screen btv-screen" id="btvScreen">
@@ -443,7 +436,7 @@ footer .wrap { display: grid; gap: 8px; }
           </div>
           <div class="btv-menu" id="btvMenu" hidden>
             <div class="btv-menu-row">Layout
-              <span><button data-l="1">1</button><button data-l="2">2</button><button data-l="4" class="on">4</button><button data-l="8">8</button></span>
+              <span><button data-l="1">1</button><button data-l="2">2</button><button data-l="4">4</button><button data-l="8">8</button><button data-l="10" class="on">10</button></span>
             </div>
             <div class="btv-menu-row">Colours
               <span>
@@ -456,7 +449,6 @@ footer .wrap { display: grid; gap: 8px; }
             <div class="btv-menu-row"><span></span><span><button id="btvMenuClose">Close</button></span></div>
           </div>
         </div>
-        <div class="chan-row btc"><a class="chan" href="#zaptv"><b>1</b> ZapTV!</a><a class="chan on" href="#blocktv"><b>2</b> BlockTV</a></div>
       <span class="led"></span></div>
       <div class="stand"></div>
       <p class="demo-status" id="btvStatus">Tuning&hellip;</p>
@@ -505,7 +497,34 @@ footer .wrap { display: grid; gap: 8px; }
       </div>
     </div>
   </div>
-</section>
+
+    <div class="zap-try">
+      <h3>Your channel</h3>
+      <p class="tagline" style="text-align:center">Paste your npub and this set fetches your real profile and latest zaps from public relays, right here in the browser. Nothing is stored.</p>
+      <figure class="tvset">
+        <div class="tv"><div class="screen demo-screen" id="tryZapScreen">
+          <div class="dz-off"><div class="dz-noise"></div><span>NO SIGNAL</span></div>
+          <div class="dz-app" hidden>
+            <div class="dz-list"></div>
+            <div class="dz-side">
+              <div class="dz-pic"></div>
+              <div class="dz-name"></div>
+              <canvas class="dz-qr" width="106" height="106"></canvas>
+            </div>
+          </div>
+          <div class="dz-flash"></div>
+          <svg class="dz-bolt" viewBox="0 0 320 240" preserveAspectRatio="none"></svg>
+        </div>
+        <span class="led"></span></div>
+        <div class="stand"></div>
+      </figure>
+      <form class="npub-form" id="npubForm" autocomplete="off">
+        <input type="text" id="npubInput" spellcheck="false" placeholder="npub1&hellip;" aria-label="Your npub">
+        <button type="submit" class="btn btn-primary" id="npubGo">Tune in</button>
+      </form>
+      <p class="demo-status" id="tryZapStatus">Or <a href="#" id="demoSample">watch a sample broadcast</a>.</p>
+    </div>
+  </section>
 
 
 
@@ -596,19 +615,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   'use strict';
   var RELAYS = ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.primal.net'];
   var MAX_ZAPS = 8; // the app's default feed length
-  var form = document.getElementById('npubForm');
-  var input = document.getElementById('npubInput');
-  var status = document.getElementById('demoStatus');
-  var statusHome = status.innerHTML;
-  var off = document.getElementById('dzOff');
-  var app = document.getElementById('dzApp');
-  var list = document.getElementById('dzList');
-  var pic = document.getElementById('dzPic');
-  var nameEl = document.getElementById('dzName');
-  var qrCanvas = document.getElementById('dzQr');
-  var screenEl = document.getElementById('demoScreen');
-  var flash = document.getElementById('dzFlash');
-  var boltSvg = document.getElementById('dzBolt');
+  var DEFAULT_NPUB = 'npub129w2nsajf4htrhps2373af4gpshq5w7msmq09fcv3nt98ls0vhcqyajsmu';
 
   // --- bech32 (BIP-173) decode, checksum-verified ---
   var B32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
@@ -634,7 +641,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     var hrpExp = [3, 3, 3, 3, 0, 14, 16, 21, 2]; // "npub" expanded
     if (polymod(hrpExp.concat(data)) !== 1) return null;
-    data = data.slice(0, -6); // drop checksum
+    data = data.slice(0, -6);
     var bits = 0, acc = 0, bytes = [];
     for (i = 0; i < data.length; i++) {
       acc = (acc << 5) | data[i]; bits += 5;
@@ -644,7 +651,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return bytes.map(function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
   }
 
-  // --- bolt11 invoice amount -> sats (from the hrp) ---
+  // --- bolt11 invoice amount -> sats ---
   function bolt11Sats(inv) {
     var m = /^ln(?:bc|tb)(\d+)([munp])?1/.exec((inv || '').toLowerCase());
     if (!m) return null;
@@ -679,15 +686,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     return '';
   }
 
-  // --- relay fan-out: one REQ per relay, collect until eose/timeout ---
+  // --- relay fan-out ---
   function query(filters, timeoutMs, done) {
     var events = {}, open = 0, finished = false, sockets = [];
     function finish() {
       if (finished) return;
       finished = true;
       sockets.forEach(function (ws) { try { ws.close(); } catch (e) {} });
-      var all = Object.keys(events).map(function (k) { return events[k]; });
-      done(all);
+      done(Object.keys(events).map(function (k) { return events[k]; }));
     }
     RELAYS.forEach(function (url) {
       var ws;
@@ -711,64 +717,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     setTimeout(finish, timeoutMs);
   }
 
-  // --- rendering ---
   function fmt(n) { return n.toLocaleString('en-US'); }
   function rowText(sats, comment) {
     var unit = sats === 1 ? ' sat' : ' sats';
     return comment ? '⚡' + fmt(sats) + unit + ': ' + comment
                    : '⚡' + fmt(sats) + unit + ' received!';
   }
-  function renderApp(profile, zaps, npub) {
-    off.hidden = true;
-    app.hidden = false;
-    list.textContent = '';
-    if (zaps.length) {
-      zaps.slice(0, MAX_ZAPS).forEach(function (z) {
-        var div = document.createElement('div');
-        div.className = 'dz-row';
-        div.textContent = rowText(z.sats, z.comment);
-        list.appendChild(div);
-      });
-    } else {
-      var d = document.createElement('div');
-      d.className = 'dz-row dz-dim';
-      d.textContent = 'No zaps found on these relays yet. Zap this npub and tune in again!';
-      list.appendChild(d);
-    }
-    var name = profile && (profile.display_name || profile.name) || '';
-    nameEl.textContent = name;
-    var url = profile && profile.picture;
-    if (url) {
-      pic.className = 'dz-pic';
-      pic.style.backgroundImage =
-        'url("https://wsrv.nl/?url=' + encodeURIComponent(url) + '&w=128&h=128&output=jpg")';
-    } else {
-      pic.className = 'dz-pic dz-ph';
-      pic.style.backgroundImage = '';
-      pic.textContent = name ? name[0].toUpperCase() : '?';
-    }
-    drawQr(npub + '@npub.cash');
-    strike();
-  }
-  function drawQr(text) {
-    try {
-      var qr = qrcode(0, 'M');
-      qr.addData(text);
-      qr.make();
-      var n = qr.getModuleCount(), scale = 2, pad = 2;
-      var size = (n + pad * 2) * scale;
-      qrCanvas.width = size; qrCanvas.height = size;
-      var ctx = qrCanvas.getContext('2d');
-      // dark-mode QR, exactly like the app's main screen: light modules on black
-      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, size, size);
-      ctx.fillStyle = '#fff';
-      for (var r = 0; r < n; r++)
-        for (var c = 0; c < n; c++)
-          if (qr.isDark(r, c)) ctx.fillRect((c + pad) * scale, (r + pad) * scale, scale, scale);
-    } catch (e) { /* content too long for QR: leave blank */ }
-  }
 
-  // --- the lightning strike, phase table lifted from the app ---
+  // the app's lightning-strike phase table
   var SEQ = [
     [1, 1, 100], [0, 0, 40], [1, 1, 70], [0, 0, 40], [1, 1, 90],
     [.8, 1, 250], [.7, 1, 280], [.6, 1, 300], [.5, 0, 320], [.4, 0, 340],
@@ -776,94 +732,165 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     [.6, 1, 100], [.2, 0, 120], [.4, 1, 80], [.1, 0, 100],
     [.2, 0, 300], [.1, 0, 400], [.1, 0, 500], [0, 0, 400], [.1, 0, 200], [0, 0, 800]
   ];
-  var striking = false;
-  function boltPoints() {
-    var pts = [], x = 96 + Math.random() * 128, y = 0;
-    pts.push(x + ',' + y);
-    for (var i = 0; i < 8; i++) {
-      y += 30;
-      x = Math.max(20, Math.min(300, x + (Math.random() * 70 - 35)));
-      pts.push(x + ',' + y);
-    }
-    return pts.join(' ');
-  }
-  function strike() {
-    if (striking || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    striking = true;
-    var i = 0;
-    function step() {
-      if (i >= SEQ.length) {
-        flash.style.opacity = 0;
-        boltSvg.style.display = 'none';
-        striking = false;
-        return;
-      }
-      var ph = SEQ[i++];
-      flash.style.opacity = ph[0];
-      if (ph[1]) {
-        boltSvg.innerHTML = '<polyline points="' + boltPoints() + '"/>';
-        boltSvg.style.display = 'block';
-      } else {
-        boltSvg.style.display = 'none';
-      }
-      setTimeout(step, ph[2]);
-    }
-    step();
-  }
-  screenEl.addEventListener('click', function () { if (!app.hidden) strike(); });
 
-  // --- flows ---
-  function setStatus(msg, isErr) {
-    status.textContent = msg;
-    status.className = 'demo-status' + (isErr ? ' err' : '');
-  }
-  function tune(npub) {
-    var pk = npubToHex(npub);
-    if (!pk) { setStatus('That doesn’t look like a valid npub (npub1…, 63 characters).', true); return; }
-    setStatus('Tuning… asking ' + RELAYS.length + ' relays…');
-    var t0 = Date.now();
-    query([{ kinds: [0], authors: [pk], limit: 1 },
-           { kinds: [9735], '#p': [pk], limit: 40 }], 6000, function (events) {
-      var profile = null, best = 0, zaps = [];
-      events.forEach(function (ev) {
-        if (ev.kind === 0 && ev.created_at > best) {
-          best = ev.created_at;
-          try { profile = JSON.parse(ev.content); } catch (e) {}
-        }
-        if (ev.kind === 9735) {
-          var sats = zapSats(ev);
-          if (sats !== null) zaps.push({ sats: sats, comment: zapComment(ev), at: ev.created_at });
-        }
-      });
-      zaps.sort(function (a, b) { return b.at - a.at; });
-      if (!profile && !zaps.length) {
-        setStatus('No profile or zaps found — relays may be unreachable from here. Try the sample instead.', true);
-        return;
+  // One ZapTV screen. root: .demo-screen element; statusEl: its status line.
+  function ZapSet(root, statusEl) {
+    var off = root.querySelector('.dz-off');
+    var app = root.querySelector('.dz-app');
+    var list = root.querySelector('.dz-list');
+    var pic = root.querySelector('.dz-pic');
+    var nameEl = root.querySelector('.dz-name');
+    var qrCanvas = root.querySelector('.dz-qr');
+    var flash = root.querySelector('.dz-flash');
+    var boltSvg = root.querySelector('.dz-bolt');
+    var striking = false;
+
+    function boltPoints() {
+      var pts = [], x = 96 + Math.random() * 128, y = 0;
+      pts.push(x + ',' + y);
+      for (var i = 0; i < 8; i++) {
+        y += 30;
+        x = Math.max(20, Math.min(300, x + (Math.random() * 70 - 35)));
+        pts.push(x + ',' + y);
       }
-      renderApp(profile, zaps, npub.trim().toLowerCase().replace(/^nostr:/, ''));
-      setStatus('On air: ' + zaps.length + ' zaps found in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's. Click the screen for another strike.');
-    });
+      return pts.join(' ');
+    }
+    function strike() {
+      if (striking || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      striking = true;
+      var i = 0;
+      (function step() {
+        if (i >= SEQ.length) {
+          flash.style.opacity = 0;
+          boltSvg.style.display = 'none';
+          striking = false;
+          return;
+        }
+        var ph = SEQ[i++];
+        flash.style.opacity = ph[0];
+        if (ph[1]) {
+          boltSvg.innerHTML = '<polyline points="' + boltPoints() + '"/>';
+          boltSvg.style.display = 'block';
+        } else {
+          boltSvg.style.display = 'none';
+        }
+        setTimeout(step, ph[2]);
+      })();
+    }
+    root.addEventListener('click', function () { if (!app.hidden) strike(); });
+
+    function drawQr(text) {
+      try {
+        var qr = qrcode(0, 'M');
+        qr.addData(text);
+        qr.make();
+        var n = qr.getModuleCount(), scale = 2, pad = 2;
+        var size = (n + pad * 2) * scale;
+        qrCanvas.width = size; qrCanvas.height = size;
+        var ctx = qrCanvas.getContext('2d');
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = '#fff';
+        for (var r = 0; r < n; r++)
+          for (var c = 0; c < n; c++)
+            if (qr.isDark(r, c)) ctx.fillRect((c + pad) * scale, (r + pad) * scale, scale, scale);
+      } catch (e) {}
+    }
+    function setStatus(msg, isErr) {
+      if (!statusEl) return;
+      statusEl.textContent = msg;
+      statusEl.className = 'demo-status' + (isErr ? ' err' : '');
+    }
+    function renderApp(profile, zaps, npub) {
+      off.hidden = true;
+      app.hidden = false;
+      list.textContent = '';
+      if (zaps.length) {
+        zaps.slice(0, MAX_ZAPS).forEach(function (z) {
+          var div = document.createElement('div');
+          div.className = 'dz-row';
+          div.textContent = rowText(z.sats, z.comment);
+          list.appendChild(div);
+        });
+      } else {
+        var d = document.createElement('div');
+        d.className = 'dz-row dz-dim';
+        d.textContent = 'No zaps found on these relays yet. Zap this npub and tune in again!';
+        list.appendChild(d);
+      }
+      var name = profile && (profile.display_name || profile.name) || '';
+      nameEl.textContent = name;
+      var url = profile && profile.picture;
+      if (url) {
+        pic.className = 'dz-pic';
+        pic.style.backgroundImage =
+          'url("https://wsrv.nl/?url=' + encodeURIComponent(url) + '&w=128&h=128&output=jpg")';
+        pic.textContent = '';
+      } else {
+        pic.className = 'dz-pic dz-ph';
+        pic.style.backgroundImage = '';
+        pic.textContent = name ? name[0].toUpperCase() : '?';
+      }
+      drawQr(npub + '@npub.cash');
+      strike();
+    }
+    function tune(npub) {
+      var pk = npubToHex(npub);
+      if (!pk) { setStatus('That doesn’t look like a valid npub (npub1…, 63 characters).', true); return; }
+      setStatus('Tuning… asking ' + RELAYS.length + ' relays…');
+      var t0 = Date.now();
+      query([{ kinds: [0], authors: [pk], limit: 1 },
+             { kinds: [9735], '#p': [pk], limit: 40 }], 6000, function (events) {
+        var profile = null, best = 0, zaps = [];
+        events.forEach(function (ev) {
+          if (ev.kind === 0 && ev.created_at > best) {
+            best = ev.created_at;
+            try { profile = JSON.parse(ev.content); } catch (e) {}
+          }
+          if (ev.kind === 9735) {
+            var sats = zapSats(ev);
+            if (sats !== null) zaps.push({ sats: sats, comment: zapComment(ev), at: ev.created_at });
+          }
+        });
+        zaps.sort(function (a, b) { return b.at - a.at; });
+        if (!profile && !zaps.length) {
+          setStatus('No profile or zaps found — relays may be unreachable from here.', true);
+          return;
+        }
+        renderApp(profile, zaps, npub.trim().toLowerCase().replace(/^nostr:/, ''));
+        setStatus('On air: ' + zaps.length + ' zaps found in ' + ((Date.now() - t0) / 1000).toFixed(1) + 's. Click the screen for another strike.');
+      });
+    }
+    function sample() {
+      renderApp(
+        { display_name: 'Satoshi Sample', picture: '' },
+        [{ sats: 21000, comment: '' }, { sats: 2100, comment: 'GM ☕' },
+         { sats: 1000, comment: 'great talk!' }, { sats: 500, comment: '' },
+         { sats: 210, comment: 'zap zap ⚡' }, { sats: 100, comment: '' },
+         { sats: 21, comment: 'V4V' }, { sats: 1, comment: '' }],
+        'npub1zaptv0000000000000000000000000000000000000000000000demo');
+      setStatus('Sample broadcast. Paste a real npub for live data.');
+    }
+    return { tune: tune, sample: sample };
   }
-  var SAMPLE_NPUB = 'npub1zaptv0000000000000000000000000000000000000000000000demo';
-  function sample() {
-    renderApp(
-      { display_name: 'Satoshi Sample', picture: '' },
-      [{ sats: 21000, comment: '' }, { sats: 2100, comment: 'GM ☕' },
-       { sats: 1000, comment: 'great talk!' }, { sats: 500, comment: '' },
-       { sats: 210, comment: 'zap zap ⚡' }, { sats: 100, comment: '' },
-       { sats: 21, comment: 'V4V' }, { sats: 1, comment: '' }],
-      SAMPLE_NPUB);
-    setStatus('Sample broadcast. Paste a real npub for live data.');
+
+  // hero set: always the ZapTV npub, no input
+  var heroRoot = document.getElementById('heroZapScreen');
+  if (heroRoot) {
+    var hero = ZapSet(heroRoot, document.getElementById('heroZapStatus'));
+    hero.tune(DEFAULT_NPUB);
   }
-  var DEFAULT_NPUB = 'npub129w2nsajf4htrhps2373af4gpshq5w7msmq09fcv3nt98ls0vhcqyajsmu';
-  form.addEventListener('submit', function (e) { e.preventDefault(); tune(input.value); });
-  document.getElementById('demoSample').addEventListener('click', function (e) { e.preventDefault(); sample(); });
-  input.value = DEFAULT_NPUB;
-  tune(DEFAULT_NPUB);
+
+  // channel-1 set: the visitor's own npub
+  var tryRoot = document.getElementById('tryZapScreen');
+  if (tryRoot) {
+    var mine = ZapSet(tryRoot, document.getElementById('tryZapStatus'));
+    var form = document.getElementById('npubForm');
+    var input = document.getElementById('npubInput');
+    form.addEventListener('submit', function (e) { e.preventDefault(); mine.tune(input.value); });
+    document.getElementById('demoSample').addEventListener('click', function (e) { e.preventDefault(); mine.sample(); });
+    if (location.hash === '#try-sample') mine.sample();
+  }
 })();
-if (location.hash === '#try-sample') {
-  document.getElementById('demoSample').click();
-}
 
 </script>
 
@@ -882,7 +909,7 @@ if (location.hash === '#try-sample') {
   var dots = [document.getElementById('btvDot0'), document.getElementById('btvDot1')];
 
   // live data (null until fetched)
-  var D = { height: null, price: null, fee: null, chart: null, fetchedAt: null };
+  var D = { height: null, price: null, fee: null, feeFast: null, feeLow: null, chart: null, fetchedAt: null };
 
   function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
   function two(n) { return ('0' + n).slice(-2); }
@@ -910,7 +937,9 @@ if (location.hash === '#try-sample') {
         var s = Math.round(1e8 / D.price), t = String(s);
         return t.length > 2 ? t.slice(0, -2) + ':' + t.slice(-2) : '0:' + two(s);
       }, unit: function () { return D.price === null ? '' : fmt(Math.round(1e8 / D.price)) + ' sat/USD'; } },
+    fee_fast: { title: 'FASTEST FEE', value: function () { return D.feeFast === null ? '—' : D.feeFast.toFixed(1); }, unit: function () { return 'sat/vB'; } },
     fee: { title: 'MEDIAN FEE', value: function () { return D.fee === null ? '—' : D.fee.toFixed(1); }, unit: function () { return 'sat/vB'; } },
+    fee_low: { title: 'LOW PRIORITY', value: function () { return D.feeLow === null ? '—' : D.feeLow.toFixed(1); }, unit: function () { return 'sat/vB'; } },
     halving: { title: 'HALVING', value: function () {
         if (D.height === null) return '—';
         return fmt(210000 - (D.height % 210000));
@@ -927,10 +956,10 @@ if (location.hash === '#try-sample') {
     clock: { title: 'CLOCK', value: function () { var t = new Date(); return t.getHours() + ':' + two(t.getMinutes()); },
              unit: function () { var t = new Date(); return DAYS[t.getDay()] + ' ' + t.getDate() + ' ' + MONTHS[t.getMonth()]; } }
   };
-  var ORDER = ['height', 'price', 'moscow', 'fee', 'halving', 'supply', 'mcap', 'clock'];
+  var ORDER = ['height', 'price', 'moscow', 'fee_fast', 'fee', 'fee_low', 'halving', 'supply', 'mcap', 'clock'];
 
   // state: layout, per-slot field assignment, colour preset, page
-  var S = { layout: 4, slots: ORDER.slice(), colour: 0, page: 0 };
+  var S = { layout: 10, slots: ORDER.slice(), colour: 0, page: 0 };
   var PRESETS = [['#000', '#fff'], ['#000', '#f7931a'], ['#000', '#a915ff'], ['#fff', '#000']];
 
   function renderGrid() {
@@ -1011,7 +1040,7 @@ if (location.hash === '#try-sample') {
     var jobs = [
       getJson('https://mempool.space/api/blocks/tip/height').then(function (v) { D.height = v; }),
       getJson('https://mempool.space/api/v1/prices').then(function (v) { D.price = v.USD; }),
-      getJson('https://mempool.space/api/v1/fees/recommended').then(function (v) { D.fee = v.halfHourFee; }),
+      getJson('https://mempool.space/api/v1/fees/recommended').then(function (v) { D.fee = v.halfHourFee; D.feeFast = v.fastestFee; D.feeLow = v.hourFee; }),
       getJson('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1')
         .then(function (v) { D.chart = v.prices; })
     ];
