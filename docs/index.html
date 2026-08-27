@@ -259,6 +259,71 @@ section.channel { border-top: 1px solid var(--line); padding: 72px 0; }
 .dz-bolt { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
 .dz-bolt polyline { fill: none; stroke: #FFD400; stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
 
+
+/* ---- BlockTV live demo ---- */
+.btv-screen {
+  aspect-ratio: 4 / 3; background: var(--btv-bg, #000); color: var(--btv-fg, #fff);
+  position: relative; font-family: 'Montserrat', system-ui, sans-serif;
+  container-type: inline-size;
+}
+.btv-page { position: absolute; inset: 0 0 9cqw 0; }
+.btv-page[hidden], #btvGrid[hidden], #btvChartPage[hidden] { display: none; }
+/* the grid page */
+#btvGrid { display: grid; padding: 2.5cqw 3cqw 0; gap: 1cqw 4cqw; }
+#btvGrid.l1 { grid-template: 1fr / 1fr; }
+#btvGrid.l2 { grid-template: 1fr 1fr / 1fr; }
+#btvGrid.l4 { grid-template: 1fr 1fr / 1fr 1fr; }
+#btvGrid.l8 { grid-template: repeat(4, 1fr) / 1fr 1fr; }
+.btv-tile { border: none; background: none; padding: 0; text-align: center; color: inherit; font: inherit; cursor: pointer; overflow: hidden; }
+.btv-tile:focus-visible { outline: 1px solid var(--btv-fg, #fff); outline-offset: -1px; }
+.btv-title { display: block; text-align: left; color: color-mix(in srgb, var(--btv-fg, #fff) 55%, transparent); font-size: 3.2cqw; letter-spacing: .18em; font-weight: 600; }
+.btv-tile .btv-title { text-align: center; }
+.btv-value { display: block; font-weight: 600; line-height: 1.05; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.btv-unit { display: block; color: color-mix(in srgb, var(--btv-fg, #fff) 55%, transparent); font-size: 3.1cqw; }
+.l1 .btv-value { font-size: 17cqw; } .l1 .btv-title { font-size: 4cqw; } .l1 .btv-unit { font-size: 3.6cqw; }
+.l2 .btv-value { font-size: 13cqw; }
+.l4 .btv-value { font-size: 9.2cqw; }
+.l8 .btv-value { font-size: 6.4cqw; } .l8 .btv-title { font-size: 2.5cqw; } .l8 .btv-unit { font-size: 2.4cqw; }
+/* the chart page */
+#btvChartPage { padding: 2.5cqw 3cqw 0; }
+.btv-chart-head { display: flex; justify-content: space-between; align-items: baseline; }
+.btv-chart-price { font-size: 6.4cqw; font-weight: 600; font-variant-numeric: tabular-nums; }
+#btvChart { position: absolute; inset: 9cqw 3cqw 10cqw; width: calc(100% - 6cqw); height: auto; }
+.btv-delta {
+  position: absolute; right: 3cqw; bottom: 11cqw; font-size: 4.4cqw; font-weight: 600;
+  color: #26d968; padding: .4cqw 2cqw; border-radius: 99px;
+}
+.btv-delta.big { background: #26d968; color: #000; }
+.btv-delta.down { color: #e05d44; }
+.btv-delta.big.down { background: #e05d44; color: #fff; }
+/* bottom bar */
+.btv-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 9cqw;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 3cqw; font-size: 3.4cqw;
+  color: color-mix(in srgb, var(--btv-fg, #fff) 70%, transparent);
+}
+.btv-dots i { display: inline-block; width: 1.9cqw; height: 1.9cqw; border-radius: 50%; margin: 0 1cqw; background: color-mix(in srgb, var(--btv-fg, #fff) 35%, transparent); cursor: pointer; }
+.btv-dots i.on { background: var(--btv-fg, #fff); }
+.btv-gear { background: none; border: none; color: inherit; font-size: 5cqw; line-height: 1; cursor: pointer; padding: 0; }
+.btv-gear:focus-visible, .btv-tile:focus-visible { outline: 1px solid currentColor; }
+/* settings overlay */
+.btv-menu {
+  position: absolute; inset: 12% 14%; background: #111; color: #fff;
+  border: 1px solid #333; border-radius: 2cqw; padding: 3cqw 4cqw;
+  display: flex; flex-direction: column; justify-content: space-around;
+  font-size: 4cqw;
+}
+.btv-menu[hidden] { display: none; }
+.btv-menu-row { display: flex; justify-content: space-between; align-items: center; gap: 2cqw; }
+.btv-menu-row button {
+  font: inherit; font-size: 3.6cqw; min-width: 8cqw; padding: 1cqw 2cqw; margin-left: 1.2cqw;
+  background: #222; color: #fff; border: 1px solid #444; border-radius: 1.2cqw; cursor: pointer;
+}
+.btv-menu-row button.on { border-color: #f7931a; color: #f7931a; }
+.btv-menu-row button[data-c] { border-width: 2px; }
+.btv-menu-row button[data-c].on { border-color: #f7931a; }
+
 /* ---- MPOS section ---- */
 section.mpos { border-top: 1px solid var(--line); padding: 72px 0 80px; }
 .mpos h2 { font-size: clamp(26px, 4vw, 36px); font-weight: 600; }
@@ -438,6 +503,58 @@ footer .wrap { display: grid; gap: 8px; }
 
 </div><div class="qr-text"><strong>Scan to get BlockTV</strong><p>Scan with your MicroPythonOS device’s camera and it offers to install BlockTV straight from the app store. On a phone? Get it from <a href="https://badgehub.eu/page/project/org.zaptv.blocktv">BadgeHub</a>.</p></div></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="channel channel-btc demo" id="trybtv">
+  <div class="wrap">
+    <span class="chip">Try it &middot; Live</span>
+    <div class="channel-head" style="margin-top:18px">
+      <h2>BlockTV, on air right now</h2>
+    </div>
+    <p class="tagline">This set is live: block height and fees from mempool.space, spot price and the 24-hour chart from public APIs, everything else derived on the page, just like the app derives it on the device. Click any tile to change what it shows, the dots to change page, and the gear to change layout and colours.</p>
+    <div class="demo-body">
+      <div>
+        <ul class="features">
+          <li><strong>Real numbers, right now.</strong> The same public sources the app polls, fetched by your browser.</li>
+          <li><strong>Click a tile</strong> to cycle it through the eight data fields.</li>
+          <li><strong>Click the gear</strong> for layout (1, 2, 4 or 8 tiles) and the app's colour presets.</li>
+          <li><strong>Two pages</strong>: your grid, and the 24-hour chart at 5-minute resolution.</li>
+        </ul>
+        <p class="demo-status" id="btvStatus">Tuning&hellip;</p>
+      </div>
+      <figure class="tvset demo-set">
+        <div class="tv"><div class="screen btv-screen" id="btvScreen">
+          <div class="btv-page" id="btvGrid"></div>
+          <div class="btv-page" id="btvChartPage" hidden>
+            <div class="btv-chart-head"><span class="btv-title">24H CHART</span><span class="btv-chart-price" id="btvChartPrice"></span></div>
+            <canvas id="btvChart"></canvas>
+            <span class="btv-delta" id="btvDelta"></span>
+          </div>
+          <div class="btv-bar">
+            <span id="btvClockBar"></span>
+            <span class="btv-dots"><i class="on" id="btvDot0"></i><i id="btvDot1"></i></span>
+            <button type="button" class="btv-gear" id="btvGear" aria-label="Settings">&#9881;</button>
+          </div>
+          <div class="btv-menu" id="btvMenu" hidden>
+            <div class="btv-menu-row">Layout
+              <span><button data-l="1">1</button><button data-l="2">2</button><button data-l="4" class="on">4</button><button data-l="8">8</button></span>
+            </div>
+            <div class="btv-menu-row">Colours
+              <span>
+                <button data-c="0" class="on" style="background:#000;color:#fff">A</button>
+                <button data-c="1" style="background:#000;color:#f7931a">A</button>
+                <button data-c="2" style="background:#000;color:#a915ff">A</button>
+                <button data-c="3" style="background:#fff;color:#000">A</button>
+              </span>
+            </div>
+            <div class="btv-menu-row"><span></span><span><button id="btvMenuClose">Close</button></span></div>
+          </div>
+        </div><span class="led"></span></div>
+        <div class="stand"></div>
+        <figcaption>Live BlockTV. Your layout survives page flips, exactly like on the device.</figcaption>
+      </figure>
     </div>
   </div>
 </section>
@@ -756,6 +873,205 @@ if (location.hash === '#try-sample') {
   document.getElementById('try').scrollIntoView();
   document.getElementById('demoSample').click();
 }
+
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var screen_ = document.getElementById('btvScreen');
+  var grid = document.getElementById('btvGrid');
+  var chartPage = document.getElementById('btvChartPage');
+  var chartCanvas = document.getElementById('btvChart');
+  var chartPrice = document.getElementById('btvChartPrice');
+  var delta = document.getElementById('btvDelta');
+  var clockBar = document.getElementById('btvClockBar');
+  var menu = document.getElementById('btvMenu');
+  var statusEl = document.getElementById('btvStatus');
+  var dots = [document.getElementById('btvDot0'), document.getElementById('btvDot1')];
+
+  // live data (null until fetched)
+  var D = { height: null, price: null, fee: null, chart: null, fetchedAt: null };
+
+  function fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+  function two(n) { return ('0' + n).slice(-2); }
+  function compact(n, unit) {
+    if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
+    if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+    return fmt(n);
+  }
+  function supplyBtc(h) {
+    // sum of subsidies per 210000-block epoch, like the app derives on-device
+    var s = 0, sub = 50, left = h;
+    while (left > 0) { var take = Math.min(left, 210000); s += take * sub; sub /= 2; left -= 210000; }
+    return s;
+  }
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  // the eight fields, formatted the way the app formats them
+  var FIELDS = {
+    height: { title: 'BLOCK HEIGHT', value: function () { return D.height === null ? '—' : fmt(D.height); }, unit: function () { return 'blocks'; } },
+    price: { title: 'PRICE', value: function () { return D.price === null ? '—' : fmt(D.price); }, unit: function () { return 'USD'; } },
+    moscow: { title: 'MOSCOW TIME', value: function () {
+        if (D.price === null) return '—';
+        var s = Math.round(1e8 / D.price), t = String(s);
+        return t.length > 2 ? t.slice(0, -2) + ':' + t.slice(-2) : '0:' + two(s);
+      }, unit: function () { return D.price === null ? '' : fmt(Math.round(1e8 / D.price)) + ' sat/USD'; } },
+    fee: { title: 'MEDIAN FEE', value: function () { return D.fee === null ? '—' : D.fee.toFixed(1); }, unit: function () { return 'sat/vB'; } },
+    halving: { title: 'HALVING', value: function () {
+        if (D.height === null) return '—';
+        return fmt(210000 - (D.height % 210000));
+      }, unit: function () {
+        if (D.height === null) return 'blocks';
+        var mins = (210000 - (D.height % 210000)) * 10, d = mins / 1440;
+        var y = Math.floor(d / 365); d = Math.round(d - y * 365);
+        return 'blocks · ~' + (y ? y + 'y ' : '') + d + 'd';
+      } },
+    supply: { title: 'SUPPLY', value: function () { return D.height === null ? '—' : compact(supplyBtc(D.height)); }, unit: function () { return 'BTC'; } },
+    mcap: { title: 'MARKET CAP', value: function () {
+        return (D.height === null || D.price === null) ? '—' : compact(supplyBtc(D.height) * D.price);
+      }, unit: function () { return 'USD'; } },
+    clock: { title: 'CLOCK', value: function () { var t = new Date(); return t.getHours() + ':' + two(t.getMinutes()); },
+             unit: function () { var t = new Date(); return DAYS[t.getDay()] + ' ' + t.getDate() + ' ' + MONTHS[t.getMonth()]; } }
+  };
+  var ORDER = ['height', 'price', 'moscow', 'fee', 'halving', 'supply', 'mcap', 'clock'];
+
+  // state: layout, per-slot field assignment, colour preset, page
+  var S = { layout: 4, slots: ORDER.slice(), colour: 0, page: 0 };
+  var PRESETS = [['#000', '#fff'], ['#000', '#f7931a'], ['#000', '#a915ff'], ['#fff', '#000']];
+
+  function renderGrid() {
+    grid.className = 'l' + S.layout;
+    grid.textContent = '';
+    for (var i = 0; i < S.layout; i++) {
+      (function (slot) {
+        var f = FIELDS[S.slots[slot]];
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btv-tile';
+        b.title = 'Click to change this field';
+        b.innerHTML = '<span class="btv-title"></span><span class="btv-value"></span><span class="btv-unit"></span>';
+        b.children[0].textContent = f.title;
+        b.children[1].textContent = f.value();
+        b.children[2].textContent = f.unit();
+        b.addEventListener('click', function () {
+          S.slots[slot] = ORDER[(ORDER.indexOf(S.slots[slot]) + 1) % ORDER.length];
+          renderGrid();
+        });
+        grid.appendChild(b);
+      })(i);
+    }
+  }
+  function applyColours() {
+    var p = PRESETS[S.colour];
+    screen_.style.setProperty('--btv-bg', p[0]);
+    screen_.style.setProperty('--btv-fg', p[1]);
+  }
+  function setPage(p) {
+    S.page = p;
+    grid.hidden = p !== 0;
+    chartPage.hidden = p !== 1;
+    dots[0].className = p === 0 ? 'on' : '';
+    dots[1].className = p === 1 ? 'on' : '';
+    if (p === 1) drawChart();
+  }
+  function tickBar() {
+    var t = new Date();
+    clockBar.textContent = DAYS[t.getDay()] + ' ' + t.getDate() + ' ' + MONTHS[t.getMonth()] +
+      ' | ' + t.getHours() + ':' + two(t.getMinutes());
+  }
+
+  function drawChart() {
+    if (!D.chart || !D.chart.length) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = chartCanvas.clientWidth, h = chartCanvas.clientHeight;
+    if (!w || !h) return;
+    chartCanvas.width = w * dpr; chartCanvas.height = h * dpr;
+    var ctx = chartCanvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var vals = D.chart.map(function (p) { return p[1]; });
+    var min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+    var pad = (max - min) * 0.08 || 1;
+    min -= pad; max += pad;
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = '#26d968';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (var i = 0; i < vals.length; i++) {
+      var x = i / (vals.length - 1) * w;
+      var y = h - (vals[i] - min) / (max - min) * h;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+    var pct = (vals[vals.length - 1] / vals[0] - 1) * 100;
+    delta.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%';
+    // a move big enough to matter for the day (2%) earns the filled pill, per the app
+    delta.className = 'btv-delta' + (pct < 0 ? ' down' : '') + (Math.abs(pct) >= 2 ? ' big' : '');
+    chartPrice.textContent = D.price === null ? '' : fmt(D.price) + ' USD';
+  }
+
+  function getJson(url) {
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+  function refresh() {
+    var jobs = [
+      getJson('https://mempool.space/api/blocks/tip/height').then(function (v) { D.height = v; }),
+      getJson('https://mempool.space/api/v1/prices').then(function (v) { D.price = v.USD; }),
+      getJson('https://mempool.space/api/v1/fees/recommended').then(function (v) { D.fee = v.halfHourFee; }),
+      getJson('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1')
+        .then(function (v) { D.chart = v.prices; })
+    ];
+    return Promise.allSettled(jobs).then(function (rs) {
+      var ok = rs.filter(function (r) { return r.status === 'fulfilled'; }).length;
+      D.fetchedAt = new Date();
+      renderGrid();
+      if (S.page === 1) drawChart();
+      if (ok === jobs.length) {
+        statusEl.textContent = 'On air: live data, refreshed every minute. Click around.';
+        statusEl.className = 'demo-status';
+      } else if (ok > 0) {
+        statusEl.textContent = 'Partly on air: ' + (jobs.length - ok) + ' of ' + jobs.length + ' sources unreachable from here. Stale tiles show a dash, never a made-up number.';
+        statusEl.className = 'demo-status';
+      } else {
+        statusEl.textContent = 'No signal: the data sources are unreachable from this page (they may be blocked in this preview). On zaptv.org this set is live.';
+        statusEl.className = 'demo-status err';
+      }
+    });
+  }
+
+  // wiring
+  document.getElementById('btvGear').addEventListener('click', function () { menu.hidden = !menu.hidden; });
+  document.getElementById('btvMenuClose').addEventListener('click', function () { menu.hidden = true; });
+  menu.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.l) {
+      S.layout = parseInt(b.dataset.l, 10);
+      menu.querySelectorAll('[data-l]').forEach(function (x) { x.className = x === b ? 'on' : ''; });
+      renderGrid();
+    }
+    if (b.dataset.c) {
+      S.colour = parseInt(b.dataset.c, 10);
+      menu.querySelectorAll('[data-c]').forEach(function (x) { x.className = x === b ? 'on' : ''; });
+      applyColours();
+    }
+  });
+  dots[0].addEventListener('click', function () { setPage(0); });
+  dots[1].addEventListener('click', function () { setPage(1); });
+
+  applyColours();
+  renderGrid();
+  if (location.hash === '#trybtv-chart') setPage(1);
+  tickBar();
+  setInterval(tickBar, 1000);
+  setInterval(function () { renderGrid(); }, 30000); // clock tile + odometer-ish refresh
+  refresh();
+  setInterval(refresh, 60000);
+  window.addEventListener('resize', function () { if (S.page === 1) drawChart(); });
+})();
 
 </script>
 </body></html>
