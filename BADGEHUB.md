@@ -163,3 +163,28 @@ The `executable` must match the uploaded .mpk filename exactly.
 4. The `.mpk` files were built with the same recipe as MPOS's
    `bundle_apps.sh`: fixed modification times, sorted file order, stored
    (uncompressed) zip, so they are byte-reproducible.
+
+## ClipTV
+
+| Field | Value |
+|---|---|
+| Slug | `com.cliptv.cliptv` |
+| Name | ClipTV |
+| Author | Richard Nakamoto |
+| Short description (`description`) | Soundboard for audio and video clips: big colour-coded buttons, playlists, random play, infinite loops. |
+| Categories | Media, Utility |
+| Badge | `mpos_api_0` |
+| Version | 0.10.5 |
+| Development status | stable |
+| Git URL | https://github.com/bitcoin3us/cliptv |
+| License | MIT |
+
+**Long description (`long_description`)**: see `dist/com.cliptv.cliptv_metadata.json` (same text as MANIFEST.JSON).
+
+**Files to upload / release** (staged in `dist/`, published with
+`tools/badgehub-release.sh com.cliptv.cliptv 0.10.5` once the project exists and its
+token is in the Keychain as `badgehub-com.cliptv.cliptv`):
+
+- `com.cliptv.cliptv_0.10.5.mpk`
+- `com.cliptv.cliptv_0.10.5_64x64.png`
+- `com.cliptv.cliptv_metadata.json`
