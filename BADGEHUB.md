@@ -168,7 +168,7 @@ The `executable` must match the uploaded .mpk filename exactly.
 
 | Field | Value |
 |---|---|
-| Slug | `com.zaptv.cliptv` |
+| Slug | `org.zaptv.cliptv` |
 | Name | ClipTV |
 | Author | Richard Nakamoto |
 | Short description (`description`) | Soundboard for audio and video clips: big colour-coded buttons, playlists, random play, infinite loops. |
@@ -179,12 +179,12 @@ The `executable` must match the uploaded .mpk filename exactly.
 | Git URL | https://github.com/bitcoin3us/cliptv |
 | License | MIT |
 
-**Long description (`long_description`)**: see `dist/com.zaptv.cliptv_metadata.json` (same text as MANIFEST.JSON).
+**Long description (`long_description`)**: see `dist/org.zaptv.cliptv_metadata.json` (same text as MANIFEST.JSON).
 
 **Files to upload / release** (staged in `dist/`, published with
-`tools/badgehub-release.sh com.zaptv.cliptv 0.11.0` once the project exists and its
-token is in the Keychain as `badgehub-com.zaptv.cliptv`):
+`tools/badgehub-release.sh org.zaptv.cliptv 0.11.0` once the project exists and its
+token is in the Keychain as `badgehub-org.zaptv.cliptv`):
 
-- `com.zaptv.cliptv_0.11.0.mpk`
-- `com.zaptv.cliptv_0.11.0_64x64.png`
-- `com.zaptv.cliptv_metadata.json`
+- `org.zaptv.cliptv_0.11.0.mpk`
+- `org.zaptv.cliptv_0.11.0_64x64.png`
+- `org.zaptv.cliptv_metadata.json`
