@@ -174,7 +174,7 @@ The `executable` must match the uploaded .mpk filename exactly.
 | Short description (`description`) | Soundboard for audio and video clips: big colour-coded buttons, playlists, random play, infinite loops. |
 | Categories | Media, Utility |
 | Badge | `mpos_api_0` |
-| Version | 0.11.0 |
+| Version | 0.12.0 |
 | Development status | stable |
 | Git URL | https://github.com/bitcoin3us/cliptv |
 | License | MIT |
@@ -182,9 +182,9 @@ The `executable` must match the uploaded .mpk filename exactly.
 **Long description (`long_description`)**: see `dist/org.zaptv.cliptv_metadata.json` (same text as MANIFEST.JSON).
 
 **Files to upload / release** (staged in `dist/`, published with
-`tools/badgehub-release.sh org.zaptv.cliptv 0.11.0` once the project exists and its
+`tools/badgehub-release.sh org.zaptv.cliptv 0.12.0` once the project exists and its
 token is in the Keychain as `badgehub-org.zaptv.cliptv`):
 
-- `org.zaptv.cliptv_0.11.0.mpk`
-- `org.zaptv.cliptv_0.11.0_64x64.png`
+- `org.zaptv.cliptv_0.12.0.mpk`
+- `org.zaptv.cliptv_0.12.0_64x64.png`
 - `org.zaptv.cliptv_metadata.json`
