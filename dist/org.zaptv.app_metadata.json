@@ -9,7 +9,7 @@
   "badges": [
     "mpos_api_0"
   ],
-  "license_type": "MIT",
+  "license_type": "GPL-3.0-or-later",
   "name": "ZapTV",
   "version": "0.3.3",
   "git_url": "https://github.com/bitcoin3us/ZapTV",
@@ -23,5 +23,6 @@
       "type": "micropython",
       "executable": "org.zaptv.app_0.3.3.mpk"
     }
-  ]
+  ],
+  "license_file": "LICENSE"
 }

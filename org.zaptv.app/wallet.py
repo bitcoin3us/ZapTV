@@ -1,3 +1,13 @@
+# SPDX-License-Identifier: GPL-3.0-or-later AND MIT
+# Copyright (C) 2026 ZapTV.org
+#
+# Derived from Lightning Piggy's wallet.py in MicroPythonOS,
+# Copyright (c) 2025 MicroPythonOS (Thomas Farstrike), MIT License. That
+# copyright notice and permission notice are preserved for the original
+# portions. ZapTV's modifications, and the file as a whole, are distributed
+# under the GNU General Public License, either version 3 or (at your option)
+# any later version, WITHOUT ANY WARRANTY; see LICENSE for details.
+
 from mpos import TaskManager
 
 from unique_sorted_list import UniqueSortedList

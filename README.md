@@ -59,3 +59,9 @@ Connect a wallet, scan your npub, and ZapTV continuously displays your most rece
 ZapTV is the first app of its kind on MPOS: the first to speak Nostr, the first built around zaps rather than balances, and the first designed as an ambient social display instead of a personal dashboard. If you stream, sell, speak, or just like the sound of thunder when sats arrive, this is the app your device was waiting for.
 
 **Get it from the MPOS app store, or install over the air from [www.ZapTV.org](https://www.zaptv.org).**
+
+## Licence
+
+ZapTV is free software, released under the [GNU GPL, version 3 or later](LICENSE).
+Parts of the wallet code derive from Lightning Piggy (MIT); those notices are
+preserved in the file headers and listed in [THIRD_PARTY.md](THIRD_PARTY.md).

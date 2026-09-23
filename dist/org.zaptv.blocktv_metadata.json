@@ -9,7 +9,7 @@
   "badges": [
     "mpos_api_0"
   ],
-  "license_type": "MIT",
+  "license_type": "GPL-3.0-or-later",
   "name": "BlockTV",
   "version": "0.2.0",
   "description": "Customisable Bitcoin dashboard: block height, price, moscow time, fees, halving, charts and zaps.",
@@ -22,5 +22,6 @@
       "type": "micropython",
       "executable": "org.zaptv.blocktv_0.2.0.mpk"
     }
-  ]
+  ],
+  "license_file": "LICENSE"
 }

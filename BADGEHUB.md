@@ -41,7 +41,7 @@ given per app below.
 | Version | 0.3.1 |
 | Development status | stable |
 | Git URL | https://github.com/bitcoin3us/ZapTV |
-| License | MIT |
+| License | GPL-3.0-or-later |
 
 **Long description (`long_description`)**
 
@@ -66,7 +66,7 @@ given per app below.
 | Version | 0.2.0 |
 | Development status | stable |
 | Git URL | (no public repo yet) |
-| License | MIT |
+| License | GPL-3.0-or-later |
 
 **Long description (`long_description`)**
 
@@ -177,7 +177,7 @@ The `executable` must match the uploaded .mpk filename exactly.
 | Version | 0.12.1 |
 | Development status | stable |
 | Git URL | https://github.com/bitcoin3us/cliptv |
-| License | MIT |
+| License | GPL-3.0-or-later |
 
 **Long description (`long_description`)**: see `dist/org.zaptv.cliptv_metadata.json` (same text as MANIFEST.JSON).
 

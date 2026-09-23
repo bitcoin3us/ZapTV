@@ -1,3 +1,12 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 ZapTV.org
+#
+# This file is part of ZapTV. ZapTV is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version. It is distributed WITHOUT
+# ANY WARRANTY; see the GNU General Public License (LICENSE) for details.
+
 """ZapTV — a Nostr-native zap display.
 
 The user connects a wallet (LNbits, Nostr Wallet Connect, or on-chain xpub);
@@ -197,6 +206,7 @@ class AboutActivity(Activity):
 
     WEB_ADDRESS = "www.ZapTV.org"
     CREDIT = "A fully open-source app by Richard Nakamoto"
+    LICENSE_LINE = "Free software: GNU GPL v3 or later, no warranty."
     LOGO_HEIGHT = 68
 
     def onCreate(self):
@@ -263,6 +273,17 @@ class AboutActivity(Activity):
         credit.set_style_text_color(fg, lv.PART.MAIN)
         credit.set_style_text_opa(lv.OPA._70, lv.PART.MAIN)
         credit.set_style_margin_top(8, lv.PART.MAIN)
+
+        # GPL section 5(d): an interactive program shows its legal notices.
+        licence = lv.label(screen)
+        licence.set_text(self.LICENSE_LINE)
+        licence.set_width(lv.pct(100))
+        licence.set_long_mode(lv.label.LONG_MODE.WRAP)
+        licence.set_style_text_align(lv.TEXT_ALIGN.CENTER, lv.PART.MAIN)
+        licence.set_style_text_font(lv.font_montserrat_12, lv.PART.MAIN)
+        licence.set_style_text_color(fg, lv.PART.MAIN)
+        licence.set_style_text_opa(lv.OPA._70, lv.PART.MAIN)
+        licence.set_style_margin_top(4, lv.PART.MAIN)
 
         self._fg = fg
         self.setContentView(screen)
