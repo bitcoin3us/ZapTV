@@ -21,6 +21,10 @@ from zaptv_unique_sorted_list import UniqueSortedList
 class LNBitsWallet(Wallet):
 
     PAYMENTS_TO_SHOW = 8
+    # Set by ZapTV from Settings > Zaps! > Sent payments. LNbits' query
+    # filters (amount[gt]=0) keep the list full of receives when sends are
+    # hidden; LNbits versions without them ignore the parameter.
+    INCOMING_ONLY = False
     PERIODIC_FETCH_BALANCE_SECONDS = 120 # seconds — LNBits websocket pushes cover real-time payments, this poll is a heartbeat / silent-disconnect check
 
     ws = None
@@ -184,8 +188,14 @@ class LNBitsWallet(Wallet):
                 if error:
                     raise RuntimeError(f"LNBits backend replied: {error}")
 
+    def _payments_url(self):
+        url = self.lnbits_url + "/api/v1/payments?limit=" + str(self.PAYMENTS_TO_SHOW)
+        if self.INCOMING_ONLY:
+            url += "&amount%5Bgt%5D=0"
+        return url
+
     async def fetch_payments(self):
-        paymentsurl = self.lnbits_url + "/api/v1/payments?limit=" + str(self.PAYMENTS_TO_SHOW)
+        paymentsurl = self._payments_url()
         headers = {
             "X-Api-Key": self.lnbits_readkey,
         }

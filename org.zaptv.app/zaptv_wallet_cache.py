@@ -48,7 +48,9 @@ from mpos import SharedPreferences
 from zaptv_payment import Payment
 from zaptv_unique_sorted_list import UniqueSortedList
 
-_CACHE_VERSION = 2
+# 3: NWC sends are stored as negative amounts (ZapTV 0.3.5); older caches
+# hold them as positive, which would show as receives until the first fetch.
+_CACHE_VERSION = 3
 
 _cache = SharedPreferences("org.zaptv.app", filename="cache.json")
 

@@ -29,6 +29,10 @@ from zaptv_unique_sorted_list import UniqueSortedList
 class NWCWallet(Wallet):
 
     PAYMENTS_TO_SHOW = 8
+    # Set by ZapTV from Settings > Zaps! > Sent payments. NIP-47's optional
+    # list_transactions "type" filter keeps the list full of receives when
+    # sends are hidden; wallets that ignore it are still filtered on screen.
+    INCOMING_ONLY = False
     PERIODIC_FETCH_BALANCE_SECONDS = 120 # seconds — NWC pushes cover real-time payments, this poll is a heartbeat / silent-disconnect check
 
     # Watchdog for the half-broken-relay case: the TCP connection sends fine
@@ -56,6 +60,8 @@ class NWCWallet(Wallet):
         # event from any relay. Reset to 0 every time an event arrives
         # (success), incremented after each fetch_balance/payments pair.
         self._polls_since_last_event = 0
+        # Ids of our recent requests: replies to anything else are ignored.
+        self._request_ids = []
         self.nwc_url = nwc_url
         if not nwc_url:
             raise ValueError('NWC URL is not set.')
@@ -162,6 +168,66 @@ class NWCWallet(Wallet):
         # actually fixed things — if the relay is still silent we'll just
         # trip the watchdog again N polls later and retry.
         self._polls_since_last_event = 0
+
+    def _payment_from_nwc(self, transaction):
+        # NIP-47 amounts are unsigned msats with a separate "type"; a send
+        # becomes negative so it can't pass for a received zap.
+        amount = round(transaction["amount"] / 1000)
+        if transaction.get("type") == "outgoing":
+            amount = -amount
+        return Payment(transaction["created_at"], amount,
+                       self.getCommentFromTransaction(transaction))
+
+    def _handle_notification(self, notification, notification_type=None):
+        # Only settled payments count: e.g. hold_invoice_accepted is not
+        # money received yet.
+        if notification_type not in (None, "payment_received", "payment_sent"):
+            print(f"NWCWallet: ignoring {notification_type} notification")
+            return
+        ntype = notification.get("type")
+        if ntype not in ("incoming", "outgoing"):
+            print(f"WARNING: invalid notification type {ntype}, ignoring.")
+            return
+        if ntype == "outgoing" and self.INCOMING_ONLY:
+            # Hidden anyway, and with an incoming-only list reply that is
+            # empty nothing would ever clear them from payment_list.
+            return
+        payment = self._payment_from_nwc(notification)
+        if ntype == "incoming":
+            # A rise in balance fires the lightning strike. The payment
+            # details are in the notification, so no full list fetch.
+            if self.last_known_balance is not None:
+                self.handle_new_balance(self.last_known_balance + payment.amount_sats, False)
+            elif self.keep_running and self.balance_updated_cb:
+                # No balance yet to add to: strike directly, and leave the
+                # first get_balance reply to set the baseline.
+                self.balance_updated_cb(payment.amount_sats)
+        # A send leaves the balance alone: ZapTV shows none, and wallets that
+        # report the connection budget as the balance (Primal) would make the
+        # next poll read the unchanged budget as a rise, i.e. a received zap.
+        self.handle_new_payment(payment)
+
+    def _remember_request(self, event):
+        self._request_ids.append(event.id)
+        del self._request_ids[:-16]
+
+    def _is_foreign_reply(self, event):
+        # NIP-47 replies carry an "e" tag naming the request they answer. A
+        # second client on the same connection (Lightning Piggy set up with
+        # the same NWC string) has its replies addressed to the same key;
+        # without this ZapTV would show that client's results as its own.
+        if event.kind != 23195:
+            return False            # notifications answer no request
+        for tag in event.tags:
+            if len(tag) >= 2 and tag[0] == "e":
+                return tag[1] not in self._request_ids
+        return False
+
+    def _list_transactions_params(self):
+        params = {"limit": self.PAYMENTS_TO_SHOW}
+        if self.INCOMING_ONLY:
+            params["type"] = "incoming"
+        return params
 
     def getCommentFromTransaction(self, transaction):
         comment = ""
@@ -282,6 +348,9 @@ class NWCWallet(Wallet):
                 # via notify_poll_success / handle_new_payments).
                 print(f"DEBUG: Event received from message pool after {time.ticks_ms()-start_time}ms")
                 event_msg = self.relay_manager.message_pool.get_event()
+                if self._is_foreign_reply(event_msg.event):
+                    print("NWCWallet: skipping a reply to another client's request")
+                    continue
                 event_created_at = event_msg.event.created_at
                 print(f"Received at {time.localtime()} a message with timestamp {event_created_at} after {time.ticks_ms()-start_time}ms")
                 try:
@@ -316,12 +385,7 @@ class NWCWallet(Wallet):
                             print("Response contains transactions!")
                             new_payment_list = UniqueSortedList()
                             for transaction in result["transactions"]:
-                                amount = transaction["amount"]
-                                amount = round(amount / 1000)
-                                comment = self.getCommentFromTransaction(transaction)
-                                epoch_time = transaction["created_at"]
-                                paymentObj = Payment(epoch_time, amount, comment)
-                                new_payment_list.add(paymentObj)
+                                new_payment_list.add(self._payment_from_nwc(transaction))
                             if len(new_payment_list) > 0:
                                 # do them all in one shot instead of one-by-one because the lv_async() isn't always chronological,
                                 # so when a long list of payments is added, it may be overwritten by a short list
@@ -334,20 +398,8 @@ class NWCWallet(Wallet):
                     else:
                         notification = response.get("notification")
                         if notification:
-                            amount = notification["amount"]
-                            amount = round(amount / 1000)
-                            type = notification["type"]
-                            if type == "outgoing":
-                                amount = -amount
-                            elif type == "incoming":
-                                new_balance = self.last_known_balance + amount
-                                self.handle_new_balance(new_balance, False) # don't trigger full fetch because payment info is in notification
-                                epoch_time = notification["created_at"]
-                                comment = self.getCommentFromTransaction(notification)
-                                paymentObj = Payment(epoch_time, amount, comment)
-                                self.handle_new_payment(paymentObj)
-                            else:
-                                print(f"WARNING: invalid notification type {type}, ignoring.")
+                            self._handle_notification(
+                                notification, response.get("notification_type"))
                         else:
                             print("Unsupported response, ignoring.")
                 except Exception as e:
@@ -376,6 +428,7 @@ class NWCWallet(Wallet):
             )
             print(f"DEBUG: Signing DM {json.dumps(dm)} with private key")
             self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
+            self._remember_request(dm)
             print(f"DEBUG: Publishing encrypted DM")
             self.relay_manager.publish_event(dm)
         except Exception as e:
@@ -387,9 +440,7 @@ class NWCWallet(Wallet):
         # Create get_balance request
         list_transactions = {
             "method": "list_transactions",
-            "params": {
-                "limit": self.PAYMENTS_TO_SHOW
-            }
+            "params": self._list_transactions_params(),
         }
         dm = EncryptedDirectMessage(
             recipient_pubkey=self.wallet_pubkey,
@@ -397,6 +448,7 @@ class NWCWallet(Wallet):
             kind=23194
         )
         self.private_key.sign_event(dm) # sign also does encryption if it's a encrypted dm
+        self._remember_request(dm)
         print("\nPublishing DM to fetch payments...")
         self.relay_manager.publish_event(dm)
 

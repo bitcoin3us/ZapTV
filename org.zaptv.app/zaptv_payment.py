@@ -38,12 +38,17 @@ class Payment:
     def __str__(self):
         amount_str = _format_sats(self.amount_sats)
         if Payment.use_symbol:
+            # The sign goes before the symbol: "-₿42", not "₿-42".
+            if self.amount_sats < 0:
+                amount_str = "-₿" + _format_sats(-self.amount_sats)
+            else:
+                amount_str = "₿" + amount_str
             if not self.comment:
                 verb = "spent"
                 if self.amount_sats > 0:
                     verb = "received!"
-                return f"₿{amount_str} {verb}"
-            return f"₿{amount_str}: {self.comment}"
+                return f"{amount_str} {verb}"
+            return f"{amount_str}: {self.comment}"
         else:
             sattext = "sats"
             if self.amount_sats == 1:

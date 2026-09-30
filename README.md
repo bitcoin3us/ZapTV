@@ -14,7 +14,7 @@ Learn more at [www.ZapTV.org](https://www.zaptv.org).
 
 ## What it does
 
-Connect a wallet, scan your npub, and ZapTV continuously displays your most recent incoming zaps and payments alongside your Nostr profile picture and a scannable receive QR. New transactions announce themselves with a 6-second lightning storm across the whole screen, then keep blinking in the list for 30 seconds so nobody misses them. No balance is shown, so it is safe to leave running in public.
+Connect a wallet, scan your npub, and ZapTV continuously displays your most recent zaps and payments alongside your Nostr profile picture and a scannable receive QR. Incoming zaps announce themselves with a 6-second lightning storm across the whole screen, and every new transaction blinks in the list for 30 seconds so nobody misses it. No balance is shown, so it is safe to leave running in public.
 
 ## Features
 
@@ -34,10 +34,11 @@ Connect a wallet, scan your npub, and ZapTV continuously displays your most rece
 
 ![The lightning-strike effect: a full-screen flash with a jagged bolt](promo/promo_strike.png)
 
-- Full-screen lightning strike effect when a new transaction arrives
+- Full-screen lightning strike effect when a zap or payment comes in
 - New transactions blink for 30 seconds
 - Show 1 to 21 recent transactions, your choice
 - Sort by most recent or by largest amount
+- Payments you send show as negative amounts, or hide them in Settings > Zaps! > Sent payments. ZapTV then asks LNbits and NWC wallets for receives only; with on-chain wallets, and NWC wallets that ignore that request, hidden sends leave fewer rows on screen
 - Tap the QR to enlarge it full screen for easy scanning across the table
 
 ![Fullscreen receive QR in dark mode](promo/promo_qr.png)
@@ -47,6 +48,7 @@ Connect a wallet, scan your npub, and ZapTV continuously displays your most rece
 ### Privacy-aware
 - Display-only: ZapTV never holds keys and cannot move funds
 - No balance on screen, safe for public spaces
+- Hide your sent payments so the screen only shows what you receive
 - xpubs are redacted from logs and error messages
 
 ### At home on any MPOS device

@@ -382,6 +382,9 @@ class ZapsSettingsActivity(_SettingsScreen):
             {"title": "Lightning Address", "key": "lightning_address",
              "placeholder": derived,
              "should_show": self._show_lightning_address},
+            {"title": "Sent payments", "key": "sent_payments", "ui": "radiobuttons",
+             "ui_options": [("Show as negative", "show"), ("Hide", "hide")],
+             "default_value": "show"},
         ]
         screen = lv.obj()
         screen.set_style_pad_all(DisplayMetrics.pct_of_width(2), lv.PART.MAIN)
@@ -860,6 +863,7 @@ class ZapTV(Activity):
         LNBitsWallet.PAYMENTS_TO_SHOW = n
         NWCWallet.PAYMENTS_TO_SHOW = n
         OnchainWallet.PAYMENTS_TO_SHOW = n
+        NWCWallet.INCOMING_ONLY = LNBitsWallet.INCOMING_ONLY = self._hide_sent()
         # Reset blink-detection state — the next _on_payments call treats
         # whatever's in payment_list (likely just cached entries) as
         # already-seen, so opening the app doesn't spuriously blink old
@@ -887,7 +891,9 @@ class ZapTV(Activity):
         # refresh from polling) — both paths route through this callback.
         if not self.wallet:
             return
-        current = set(self._payment_id(p) for p in self.wallet.payment_list)
+        # Only rows that are shown can be new: a hidden send must not blink
+        # or snap the list to the top.
+        current = set(self._payment_id(p) for p in self._visible_payments())
         if self._seen_payments is None:
             # First callback after _build_wallet — adopt whatever's there
             # as baseline, don't blink the initial fill.
@@ -911,7 +917,7 @@ class ZapTV(Activity):
     def _on_error(self, e):
         # Only surface the error when there's nothing better to show, so a
         # transient blip doesn't wipe a populated zap list.
-        if not self.wallet or len(self.wallet.payment_list) == 0:
+        if not self._visible_payments():
             self.zap_label.set_text(str(e))
 
     def _on_static_receive_code(self):
@@ -935,18 +941,16 @@ class ZapTV(Activity):
         # "symbol" is picked, otherwise a "sats" suffix. Other units leave
         # zap amounts in sats, matching Lightning Piggy's transaction list.
         Payment.use_symbol = self.prefs.get_string("denomination") == "₿ symbol"
-        if not self.wallet or len(self.wallet.payment_list) == 0:
+        payments = self._visible_payments()
+        if not payments:
             self.zap_label.set_text(lv.SYMBOL.REFRESH + " Waiting for zaps...")
             return
-        # payment_list is a UniqueSortedList — iterates newest-first by
-        # default. The Customise "Sort" setting can flip it to largest-
-        # amount-first, which requires a re-sort into a regular list.
+        # _visible_payments keeps payment_list's newest-first order. The
+        # Customise "Sort" setting can flip it to largest-amount-first
+        # (sends, being negative, sort last).
         limit = self._max_zaps()
         if (self.prefs.get_string("sort_order") or "recent") == "largest":
-            payments = sorted(self.wallet.payment_list,
-                              key=lambda p: p.amount_sats, reverse=True)
-        else:
-            payments = self.wallet.payment_list
+            payments = sorted(payments, key=lambda p: p.amount_sats, reverse=True)
         # Phase 0 of the blink wraps the line in a #FFE600 recolor tag;
         # phase 1 leaves it plain so the alternation reads as a yellow
         # flash on the freshly-arrived row.
@@ -960,6 +964,19 @@ class ZapTV(Activity):
             if len(lines) >= limit:
                 break
         self.zap_label.set_text("\n".join(lines))
+
+    def _hide_sent(self):
+        return self.prefs.get_string("sent_payments") == "hide"
+
+    def _visible_payments(self):
+        # Sends are negative (fee-only on-chain self-transfers too). The
+        # filter also covers LNbits, on-chain and NWC wallets that ignore
+        # the incoming-only list_transactions filter.
+        if not self.wallet:
+            return []
+        if self._hide_sent():
+            return [p for p in self.wallet.payment_list if p.amount_sats >= 0]
+        return list(self.wallet.payment_list)
 
     def _payment_id(self, payment):
         # Hashable identity tuple for blink tracking. id() doesn't work —
