@@ -33,7 +33,8 @@ import time
 import lvgl as lv
 
 from mpos import (Activity, Intent, DisplayMetrics, SharedPreferences,
-                  SettingsActivity, TaskManager, DownloadManager)
+                  SettingActivity, SettingsActivity, TaskManager,
+                  DownloadManager)
 
 # Focus-highlight helper for custom buttons, added in MPOS 0.13+. Guarded so
 # the app still runs on 0.10.x firmware (buttons stay focusable via the
@@ -107,9 +108,7 @@ import wallet_cache
 
 # Nostr profile-picture fetch deps.
 from nostr.key import PublicKey
-from nostr.relay_manager import RelayManager
-from nostr.filter import Filter, Filters
-from nostr.message_type import ClientMessageType
+from profile_fetch import fetch_profile
 
 from lightning import Lightning
 from fullscreen_qr import FullscreenQR
@@ -147,9 +146,10 @@ AUTO_SCROLL_IDLE_MS = 120000  # 2 min, matches Lightning Piggy
 # npub doubles as the default receive address shown in the QR.
 NPUB_CASH_DOMAIN = "npub.cash"
 
-# Relay used for the one-shot kind-0 metadata fetch that powers the profile
-# picture. Hardcoded for now — could become a Customise setting later.
-NOSTR_PROFILE_RELAY = "wss://relay.damus.io"
+# The Npub row of Settings > Profile. The profile box's "Add npub" button
+# opens the same input directly. Copied per use: SettingsActivity stores its
+# row widgets in the dict it is given.
+NPUB_SETTING = {"title": "Npub", "key": "npub", "placeholder": "npub1..."}
 
 # wsrv.nl is a widely-used free image proxy. We route the picture URL
 # through it so anything (JPEG / PNG truecolor / WebP) comes back as a
@@ -407,7 +407,7 @@ class ProfileSettingsActivity(_SettingsScreen):
         extras = self.getIntent().extras or {}
         self.prefs = extras.get("prefs")
         self.settings = [
-            {"title": "Npub", "key": "npub", "placeholder": "npub1..."},
+            dict(NPUB_SETTING),
             {"title": "Name", "key": "name", "placeholder": "Your display name"},
             {"title": "Profile picture", "key": "profile_source", "ui": "radiobuttons",
              "ui_options": [("Nostr npub", "nostr"), ("Camera selfie", "selfie")],
@@ -1078,6 +1078,12 @@ class ZapTV(Activity):
                 # Cache stale or missing — kick off a background fetch and
                 # fall through to the placeholder while it runs.
                 self._start_nostr_profile_fetch(npub)
+            elif self._wallet_configured():
+                # Only while the dashboard is showing: without a wallet the
+                # welcome screen covers this box, and a hidden button would
+                # still take keypad focus.
+                self._build_add_npub_button()
+                return
 
         # Placeholder — shown when no source matches, no npub, or a Nostr
         # fetch is in flight. The on-device camera-selfie capture path is
@@ -1089,6 +1095,37 @@ class ZapTV(Activity):
         # Same theme-beats-inheritance issue as in _apply_theme.
         placeholder.set_style_text_color(self._theme_colors()[1], lv.PART.MAIN)
         placeholder.center()
+
+    def _build_add_npub_button(self):
+        # Inset from the box edges so the keypad focus ring isn't clipped.
+        side = self.profile_box.get_width() - 8
+        btn = lv.button(self.profile_box)
+        btn.set_size(side, side)
+        btn.center()
+        btn.set_style_pad_all(2, lv.PART.MAIN)
+        btn.set_flex_flow(lv.FLEX_FLOW.COLUMN)
+        btn.set_flex_align(lv.FLEX_ALIGN.CENTER, lv.FLEX_ALIGN.CENTER,
+                           lv.FLEX_ALIGN.CENTER)
+        btn.add_event_cb(self._add_npub_clicked, lv.EVENT.CLICKED, None)
+        big = side >= 110
+        icon = lv.label(btn)
+        icon.set_text(lv.SYMBOL.PLUS)
+        icon.set_style_text_font(
+            lv.font_montserrat_24 if big else lv.font_montserrat_16, lv.PART.MAIN)
+        text = lv.label(btn)
+        text.set_text("Add npub")
+        text.set_style_text_font(
+            lv.font_montserrat_16 if big else lv.font_montserrat_12, lv.PART.MAIN)
+        _register_focusable(btn)
+
+    def _add_npub_clicked(self, event):
+        # Straight to the Npub input (with its QR-scan button on camera
+        # boards). Saving returns here, and onResume's _refresh_profile
+        # then fetches the picture.
+        intent = Intent(activity_class=SettingActivity)
+        intent.putExtra("setting", dict(NPUB_SETTING))
+        intent.putExtra("prefs", self.prefs)
+        self.startActivity(intent)
 
     def _file_exists(self, path):
         try:
@@ -1131,40 +1168,19 @@ class ZapTV(Activity):
             hex_pubkey = PublicKey.from_npub(npub).hex()
             print("zaptv: profile fetch for", hex_pubkey[:10] + "...")
 
-            rm = RelayManager()
-            rm.add_relay(NOSTR_PROFILE_RELAY)
-            await rm.open_connections({"cert_reqs": ssl.CERT_NONE})
-            for _ in range(50):  # up to 5 s for the relay to connect
-                await TaskManager.sleep(0.1)
-                if rm.connected_or_errored_relays() > 0:
-                    break
-
-            sub_id = "zaptv_profile_" + hex_pubkey[:8]
-            filters = Filters([Filter(authors=[hex_pubkey], kinds=[0])])
-            rm.add_subscription(sub_id, filters)
-            req = [ClientMessageType.REQUEST, sub_id]
-            req.extend(filters.to_json_array())
-            rm.publish_message(json.dumps(req))
-
+            meta = await fetch_profile(hex_pubkey,
+                                       ssl_options={"cert_reqs": ssl.CERT_NONE})
             picture_url = None
             display_name = None
-            for _ in range(100):  # up to 10 s for the kind-0 event
-                await TaskManager.sleep(0.1)
-                if rm.message_pool.has_events():
-                    ev = rm.message_pool.get_event()
-                    try:
-                        meta = json.loads(ev.event.content)
-                        picture_url = meta.get("picture")
-                        display_name = (meta.get("display_name")
-                                        or meta.get("name"))
-                        break  # one event is enough — we have the metadata
-                    except Exception as e:
-                        print("zaptv: parse kind-0 failed:", e)
-
-            try:
-                await rm.close_connections()
-            except Exception as e:
-                print("zaptv: close relay failed:", e)
+            if meta is None:
+                print("zaptv: no relay returned a profile for this npub")
+            else:
+                picture_url = meta.get("picture")
+                display_name = meta.get("display_name") or meta.get("name")
+                if not isinstance(picture_url, str):
+                    picture_url = None
+                if not isinstance(display_name, str):
+                    display_name = None
 
             # Mark that we've completed a metadata fetch for this npub so
             # future opens skip the relay round-trip even when the npub's
