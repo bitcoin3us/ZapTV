@@ -14,7 +14,8 @@ ZapTV shows its most recent payments on the left, with the Nostr profile
 picture, display name, and a receive QR on the right.
 
 Transaction monitoring uses the same mechanism as Lightning Piggy — the ported
-wallet.py / lnbits_wallet.py / nwc_wallet.py / onchain_wallet.py modules.
+zaptv_wallet.py / zaptv_lnbits_wallet.py / zaptv_nwc_wallet.py /
+zaptv_onchain_wallet.py modules.
 npub.cash itself can't list recent zaps without authentication, hence the
 wallet-backend approach.
 
@@ -100,18 +101,23 @@ def _register_focusable(widget):
 
 # Import the wallet modules at the top so they resolve before MPOS restores
 # sys.path on a wallet-type switch (see Lightning Piggy's displaywallet.py).
-from lnbits_wallet import LNBitsWallet
-from nwc_wallet import NWCWallet
-from onchain_wallet import OnchainWallet
-from payment import Payment
-import wallet_cache
+#
+# Every helper module carries a zaptv_ prefix, and new ones must too: all
+# MicroPythonOS apps share one sys.modules, so a generic name (wallet,
+# nwc_wallet, payment, ...) already imported by another app is silently
+# reused. Lightning Piggy uses those exact names and often auto-starts at boot.
+from zaptv_lnbits_wallet import LNBitsWallet
+from zaptv_nwc_wallet import NWCWallet
+from zaptv_onchain_wallet import OnchainWallet
+from zaptv_payment import Payment
+import zaptv_wallet_cache as wallet_cache
 
 # Nostr profile-picture fetch deps.
 from nostr.key import PublicKey
-from profile_fetch import fetch_profile
+from zaptv_profile_fetch import fetch_profile
 
-from lightning import Lightning
-from fullscreen_qr import FullscreenQR
+from zaptv_lightning import Lightning
+from zaptv_fullscreen_qr import FullscreenQR
 
 # Left transaction-area width — matches Lightning Piggy so the two apps feel
 # consistent. The remaining width holds the profile picture and receive QR.

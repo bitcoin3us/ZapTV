@@ -14,9 +14,9 @@ from uaiowebsocket import WebSocketApp
 
 from mpos import TaskManager, DownloadManager
 
-from wallet import Wallet
-from payment import Payment
-from unique_sorted_list import UniqueSortedList
+from zaptv_wallet import Wallet
+from zaptv_payment import Payment
+from zaptv_unique_sorted_list import UniqueSortedList
 
 class LNBitsWallet(Wallet):
 
@@ -78,13 +78,13 @@ class LNBitsWallet(Wallet):
 
     # Example data: {"wallet_balance": 4936, "payment": {"checking_id": "037c14...56b3", "pending": false, "amount": 1000000, "fee": 0, "memo": "zap2oink", "time": 1711226003, "bolt11": "lnbc10u1pjl70y....qq9renr", "preimage": "0000...000", "payment_hash": "037c1438b20ef4729b1d3dc252c2809dc2a2a2e641c7fb99fe4324e182f356b3", "expiry": 1711226603.0, "extra": {"tag": "lnurlp", "link": "TkjgaB", "extra": "1000000", "comment": ["yes"], "lnaddress": "oink@demo.lnpiggy.com"}, "wallet_id": "c9168...8de4", "webhook": null, "webhook_status": null}}
     def on_message(self, class_obj, message: str):
-        print(f"wallet.py _on_message received: {message}")
+        print(f"zaptv_lnbits_wallet on_message received: {message}")
         try:
             payment_notification = json.loads(message)
             try:
                 new_balance = int(payment_notification.get("wallet_balance"))
             except Exception as e:
-                print("wallet.py on_message got exception while parsing balance: {e}")
+                print(f"zaptv_lnbits_wallet on_message got exception while parsing balance: {e}")
             if new_balance:
                 self.handle_new_balance(new_balance, False) # refresh balance on display BUT don't trigger a full fetch_payments
                 transaction = payment_notification.get("payment")

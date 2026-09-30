@@ -45,8 +45,8 @@ import hashlib
 import time
 
 from mpos import SharedPreferences
-from payment import Payment
-from unique_sorted_list import UniqueSortedList
+from zaptv_payment import Payment
+from zaptv_unique_sorted_list import UniqueSortedList
 
 _CACHE_VERSION = 2
 

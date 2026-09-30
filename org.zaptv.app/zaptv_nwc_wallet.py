@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later AND MIT
 # Copyright (C) 2026 ZapTV.org
 #
-# Contains code derived from Lightning Piggy's nostr_service.py in MicroPythonOS,
+# Contains code derived from Lightning Piggy's nwc_wallet.py and
+# nostr_service.py in MicroPythonOS,
 # Copyright (c) 2025 MicroPythonOS (Thomas Farstrike), MIT License. That
 # copyright notice and permission notice are preserved for the original
 # portions. ZapTV's modifications, and the file as a whole, are distributed
@@ -21,9 +22,9 @@ from nostr.filter import Filter, Filters
 from nostr.event import EncryptedDirectMessage
 from nostr.key import PrivateKey
 
-from wallet import Wallet
-from payment import Payment
-from unique_sorted_list import UniqueSortedList
+from zaptv_wallet import Wallet
+from zaptv_payment import Payment
+from zaptv_unique_sorted_list import UniqueSortedList
 
 class NWCWallet(Wallet):
 

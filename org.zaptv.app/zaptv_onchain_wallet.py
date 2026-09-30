@@ -13,9 +13,9 @@ import time
 
 from mpos import TaskManager, DownloadManager
 
-from wallet import Wallet
-from payment import Payment
-from unique_sorted_list import UniqueSortedList
+from zaptv_wallet import Wallet
+from zaptv_payment import Payment
+from zaptv_unique_sorted_list import UniqueSortedList
 
 
 _MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",

@@ -10,8 +10,8 @@
 
 from mpos import TaskManager
 
-from unique_sorted_list import UniqueSortedList
-import wallet_cache
+from zaptv_unique_sorted_list import UniqueSortedList
+import zaptv_wallet_cache as wallet_cache
 
 class Wallet:
 

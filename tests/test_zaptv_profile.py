@@ -1,6 +1,6 @@
 """ZapTV profile tests: the relay-fallback kind-0 fetch and the "Add npub" button.
 
-The fetch tests drive profile_fetch.fetch_profile() with fake relays and a
+The fetch tests drive zaptv_profile_fetch.fetch_profile() with fake relays and a
 fake clock, so they need no network and run in milliseconds. The button
 tests start ZapTV on the desktop build with a throwaway prefs file and the
 profile fetch stubbed out.
@@ -23,7 +23,7 @@ from mpos.ui.view import screen_stack
 from mpos.ui.testing import wait_for_render
 
 sys.path.insert(0, "apps/org.zaptv.app")
-import profile_fetch
+import zaptv_profile_fetch as profile_fetch
 from nostr.event import Event
 from nostr.key import PrivateKey
 
