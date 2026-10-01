@@ -187,7 +187,7 @@ def same(path, img):
     old = Image.open(path)
     if old.mode != img.mode or old.size != img.size:
         return False
-    return ImageChops.difference(old.convert("RGBA"), img.convert("RGBA")).getbbox() is None
+    return ImageChops.difference(old.convert("RGBA"), img.convert("RGBA")).getbbox(alpha_only=False) is None
 
 
 def write(img, relpath, check):
