@@ -62,6 +62,14 @@ ZapTV is the first app of its kind on MPOS: the first to speak Nostr, the first 
 
 **Get it from the MPOS app store, or install over the air from [www.ZapTV.org](https://www.zaptv.org).**
 
+## Artwork
+
+The logo sources live in [`artwork/`](artwork): the ZapTV family's TV mark
+and wordmark, as SVG. `python3 tools/build_assets.py` renders every logo PNG
+the app ships from them (launcher icon, welcome-screen mark, and the splash
+and About lockup); add `--check` to see whether the PNGs are current without
+writing anything. It needs Pillow and `rsvg-convert` (`brew install librsvg`).
+
 ## Licence
 
 ZapTV is free software, released under the [GNU GPL, version 3 or later](LICENSE).
