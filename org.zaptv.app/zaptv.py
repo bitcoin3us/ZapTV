@@ -157,10 +157,11 @@ APP_LICENSE = ("© 2026 ZapTV.org. Free software:\n"
                "GNU GPL v3 or later, no warranty.")
 APP_THIRD_PARTY = "Includes Lightning Piggy code (MIT)."
 LOGO_H = 44                 # About logo height in px, the same in every app
-# Tight spacing, so that the logo, three facts (a long board name takes two
-# lines), the site and five footer lines fit 240 px without scrolling. At
-# 12 px a line is 16 px tall; -3 closes the leading without glyphs touching.
-ABOUT_PAD_ROW = 3           # gap between the About screen's rows
+# Tight spacing, the same in every app, so that the logo, three facts (a
+# long board name takes two lines), the site and up to six footer lines
+# fit 240 px without scrolling. At 12 px a line is 16 px tall; -3 closes
+# the leading without glyphs touching.
+ABOUT_PAD_ROW = 1           # gap between the About screen's rows
 ABOUT_LINE_SPACE = -3       # leading inside the multi-line About labels
 _HW_ACRONYMS = ("lcd", "oled", "tft", "gps", "imu", "ir", "sd", "usb", "tv")
 

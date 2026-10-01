@@ -313,7 +313,7 @@ class TestZapTVAbout(unittest.TestCase):
         self.assertTrue(isinstance(_top(), zaptv.MainSettingsActivity))
 
     def test_settings_back_button_is_in_the_same_corner(self):
-        settings = self._open_settings()
+        self._open_settings()
         screen = lv.screen_active()
         screen.update_layout()
         backs = [screen.get_child(i) for i in range(screen.get_child_count())
