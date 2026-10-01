@@ -29,6 +29,7 @@ option is selectable but nothing captures the image yet.
 """
 
 import json
+import os
 import time
 
 import lvgl as lv
@@ -147,6 +148,22 @@ BLINK_TICK_MS = 500
 LOCKUP_IMAGE = "zaptv_lockup.png"
 SPLASH_DURATION_MS = 2000
 
+# The About screen, laid out the same way in every ZapTV app. The footer
+# strings are broken by hand wherever a line would not fit the footer
+# width (DisplayMetrics.width() - 100), so LVGL never splits a name.
+APP_SITE = "www.ZapTV.org"
+APP_CREDIT = "A fully open-source app\nby Richard Nakamoto"
+APP_LICENSE = ("© 2026 ZapTV.org. Free software:\n"
+               "GNU GPL v3 or later, no warranty.")
+APP_THIRD_PARTY = "Includes Lightning Piggy code (MIT)."
+LOGO_H = 44                 # About logo height in px, the same in every app
+# Tight spacing, so that the logo, three facts (a long board name takes two
+# lines), the site and five footer lines fit 240 px without scrolling. At
+# 12 px a line is 16 px tall; -3 closes the leading without glyphs touching.
+ABOUT_PAD_ROW = 3           # gap between the About screen's rows
+ABOUT_LINE_SPACE = -3       # leading inside the multi-line About labels
+_HW_ACRONYMS = ("lcd", "oled", "tft", "gps", "imu", "ir", "sd", "usb", "tv")
+
 # Snap the zap list back to the top after this long without any touch
 # contact, so the device naturally re-presents the most recent zaps to
 # anyone walking up after someone scrolled down to inspect older entries.
@@ -169,14 +186,91 @@ NPUB_SETTING = {"title": "Npub", "key": "npub", "placeholder": "npub1..."}
 IMG_PROXY_URL = "https://wsrv.nl/?url={url}&w=128&h=128&output=jpg"
 
 
-def _add_back_button(screen, on_back, color=None):
-    """Floating back button at the bottom-right of a settings screen — the
-    same pattern Lightning Piggy uses. Tapping it finishes the activity,
+def _plain_font(size):
+    """Montserrat at size, through FontManager where the firmware has it,
+    else the builtin font object (0.10.x firmware)."""
+    if FontManager:
+        try:
+            return FontManager.getFont(size=size)
+        except Exception as e:
+            print("zaptv: font", size, "unavailable, using builtin:", e)
+    return getattr(lv, "font_montserrat_%d" % size)
+
+
+def _res_path(fullname, name):
+    """LVGL-filesystem path of a bundled res/ image, or None if missing."""
+    for prefix in ("/apps/{}/res/{}", "apps/{}/res/{}"):
+        path = prefix.format(fullname, name)
+        try:
+            os.stat(path)
+            return "M:" + path
+        except OSError:
+            pass
+    return None
+
+
+def _hardware_id():
+    """The board id MicroPythonOS detected at boot, or None. A board that
+    never registers itself leaves DeviceInfo's placeholder, which is no
+    more use to a reader than no id at all."""
+    try:
+        from mpos.device_info import DeviceInfo
+        board = DeviceInfo.get_hardware_id()
+    except Exception:
+        return None
+    return None if board == "missing-hardware-info" else board
+
+
+def _os_version():
+    try:
+        from mpos.build_info import BuildInfo
+        return BuildInfo.version.release or "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _pretty_hardware(board):
+    """waveshare_esp32_s3_touch_lcd_2 -> Waveshare ESP32 S3 Touch LCD 2,
+    or "unknown" when there is no board id to show."""
+    words = []
+    for token in str(board or "").replace("-", "_").split("_"):
+        if not token:
+            continue
+        # Model codes (esp32, s3, m5stack) and hardware acronyms both read
+        # wrong in title case, so anything with a digit stays uppercase.
+        if token in _HW_ACRONYMS or any(ch in "0123456789" for ch in token):
+            words.append(token.upper())
+        else:
+            words.append(token[0].upper() + token[1:])
+    return " ".join(words) or "unknown"
+
+
+def app_version(fullname):
+    """Our own version, read from the manifest we shipped with."""
+    for path in ("/apps/{}/MANIFEST.JSON", "apps/{}/MANIFEST.JSON"):
+        try:
+            with open(path.format(fullname)) as handle:
+                return json.load(handle).get("version") or "unknown"
+        except Exception:
+            pass
+    return "unknown"
+
+
+def _add_back_button(screen, on_back):
+    """Floating back button in the bottom-right corner of a settings screen,
+    the same pattern Lightning Piggy uses. Tapping it finishes the activity,
     returning to the previous screen. FLOATING keeps it out of the screen's
-    flex-column flow so the align() position holds."""
+    flex-column flow so the align() position holds.
+
+    It sits in the corner itself rather than inside the screen's padding,
+    so centred content DisplayMetrics.width() - 100 wide (the About
+    footer) always clears it."""
     btn = lv.obj(screen)
     btn.set_size(50, 50)
-    btn.align(lv.ALIGN.BOTTOM_RIGHT, 0, 0)
+    # align() places a child inside its parent's padding; step back out.
+    btn.align(lv.ALIGN.BOTTOM_RIGHT,
+              screen.get_style_pad_right(lv.PART.MAIN),
+              screen.get_style_pad_bottom(lv.PART.MAIN))
     btn.add_flag(lv.obj.FLAG.CLICKABLE)
     btn.add_flag(lv.obj.FLAG.FLOATING)
     btn.set_style_bg_opa(lv.OPA.TRANSP, lv.PART.MAIN)
@@ -186,12 +280,6 @@ def _add_back_button(screen, on_back, color=None):
     icon = lv.label(btn)
     icon.set_text(lv.SYMBOL.LEFT)
     icon.set_style_text_font(lv.font_montserrat_24, lv.PART.MAIN)
-    # Screens that paint their own background (About) must say which colour
-    # the chevron should be: inheriting the theme's white text left it
-    # invisible against a light-mode background. Settings screens keep the
-    # theme default by passing nothing.
-    if color is not None:
-        icon.set_style_text_color(color, lv.PART.MAIN)
     icon.center()
     _register_focusable(btn)
 
@@ -208,131 +296,116 @@ class _SettingsScreen(SettingsActivity):
 
 
 class AboutActivity(Activity):
-    """About screen: full logo, version info, and the project web address.
+    """Logo, the three version numbers worth quoting in a bug report,
+    where to find the app, and its legal notices (GPL section 5(d): an
+    interactive program shows them). Every ZapTV app shares this layout,
+    which fits a 320x240 screen without scrolling, even with the longest
+    board name.
 
-    A plain Activity rather than a SettingsActivity — nothing here is
+    Colours come from the MicroPythonOS light/dark theme, like the settings
+    screens; ZapTV's own Customise theme only paints the main screen.
+
+    A plain Activity rather than a SettingsActivity: nothing here is
     editable, so the declarative settings-row UI would be the wrong shape.
     """
 
-    WEB_ADDRESS = "www.ZapTV.org"
-    CREDIT = "A fully open-source app by Richard Nakamoto"
-    LICENSE_LINE = "Free software: GNU GPL v3 or later, no warranty."
-    LOGO_HEIGHT = 68
-
     def onCreate(self):
-        extras = self.getIntent().extras or {}
-        self.prefs = extras.get("prefs")
-        dark = True
-        if self.prefs:
-            dark = (self.prefs.get_string("theme") or "dark") != "light"
-        bg = lv.color_black() if dark else lv.color_white()
-        fg = lv.color_white() if dark else lv.color_black()
-
         screen = lv.obj()
-        screen.set_style_bg_color(bg, lv.PART.MAIN)
-        screen.set_style_bg_opa(lv.OPA.COVER, lv.PART.MAIN)
-        screen.set_style_border_width(0, lv.PART.MAIN)
-        screen.set_style_pad_all(DisplayMetrics.pct_of_width(3), lv.PART.MAIN)
+        screen.set_style_pad_all(DisplayMetrics.pct_of_width(2), lv.PART.MAIN)
         screen.set_flex_flow(lv.FLEX_FLOW.COLUMN)
         screen.set_flex_align(lv.FLEX_ALIGN.START, lv.FLEX_ALIGN.CENTER,
-                              lv.FLEX_ALIGN.CENTER)
-        # The default row gap plus each label's own margin left the last line
-        # below the fold on a 240 px screen; 4 px of flex gap keeps the whole
-        # screen visible without scrolling.
-        screen.set_style_pad_row(4, lv.PART.MAIN)
-        screen.set_scroll_dir(lv.DIR.VER)
+                              lv.FLEX_ALIGN.START)
+        screen.set_style_pad_row(ABOUT_PAD_ROW, lv.PART.MAIN)
+        screen.set_style_border_width(0, lv.PART.MAIN)
         screen.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
-
-        # Full ZapTV logo (TV mark and wordmark), the splash artwork.
-        logo = lv.image(screen)
-        logo.set_src("M:apps/" + self._fullname() + "/res/" + LOCKUP_IMAGE)
-        # Box the artwork and let CONTAIN scale it down to fit. The earlier
-        # logo, 96 px tall at native size, pushed the last line off a 240 px
-        # screen, and the credit at the bottom is only worth adding if it can
-        # be read without scrolling for it.
-        logo.set_size(lv.pct(100), self.LOGO_HEIGHT)
-        logo.set_inner_align(lv.image.ALIGN.CONTAIN)
-
-        for text in ("ZapTV " + self._app_version(),
-                     "MicroPythonOS " + self._os_version(),
-                     "Hardware: " + self._hardware(),
-                     self.WEB_ADDRESS):
-            lbl = lv.label(screen)
-            lbl.set_text(text)
-            # Hardware ids are long ("waveshare_esp32_s3_touch_lcd_2") and were
-            # being clipped at both edges, so every line wraps rather than
-            # running off the display.
-            lbl.set_width(lv.pct(100))
-            lbl.set_long_mode(lv.label.LONG_MODE.WRAP)
-            lbl.set_style_text_align(lv.TEXT_ALIGN.CENTER, lv.PART.MAIN)
-            lbl.set_style_text_font(lv.font_montserrat_14, lv.PART.MAIN)
-            lbl.set_style_text_color(fg, lv.PART.MAIN)
-            lbl.set_style_margin_top(4, lv.PART.MAIN)
-
-        # Credit line. Too long for one 320 px row, so unlike the lines above
-        # it wraps and is set a size smaller to keep the version block the
-        # focus of the screen.
-        credit = lv.label(screen)
-        credit.set_text(self.CREDIT)
-        credit.set_width(lv.pct(100))
-        credit.set_long_mode(lv.label.LONG_MODE.WRAP)
-        credit.set_style_text_align(lv.TEXT_ALIGN.CENTER, lv.PART.MAIN)
-        credit.set_style_text_font(lv.font_montserrat_12, lv.PART.MAIN)
-        credit.set_style_text_color(fg, lv.PART.MAIN)
-        credit.set_style_text_opa(lv.OPA._70, lv.PART.MAIN)
-        credit.set_style_margin_top(8, lv.PART.MAIN)
-
-        # GPL section 5(d): an interactive program shows its legal notices.
-        licence = lv.label(screen)
-        licence.set_text(self.LICENSE_LINE)
-        licence.set_width(lv.pct(100))
-        licence.set_long_mode(lv.label.LONG_MODE.WRAP)
-        licence.set_style_text_align(lv.TEXT_ALIGN.CENTER, lv.PART.MAIN)
-        licence.set_style_text_font(lv.font_montserrat_12, lv.PART.MAIN)
-        licence.set_style_text_color(fg, lv.PART.MAIN)
-        licence.set_style_text_opa(lv.OPA._70, lv.PART.MAIN)
-        licence.set_style_margin_top(4, lv.PART.MAIN)
-
-        self._fg = fg
         self.setContentView(screen)
 
     def onResume(self, screen):
         super().onResume(screen)
-        _add_back_button(screen, self.finish, color=self._fg)
+        # Built here rather than in onCreate, after clean(), so a second
+        # resume redraws the screen instead of stacking a second back button.
+        screen.clean()
+        self._add_logo(screen)
+        for name, value in (("ZapTV", app_version(self._fullname())),
+                            ("MicroPythonOS", _os_version()),
+                            ("Hardware", _pretty_hardware(_hardware_id()))):
+            self._add_fact(screen, name, value)
+        site = lv.label(screen)
+        site.set_text(APP_SITE)
+        site.set_style_text_font(_plain_font(16), lv.PART.MAIN)
+        for text in (APP_CREDIT, APP_LICENSE, APP_THIRD_PARTY):
+            self._add_footer(screen, text)
+        _add_back_button(screen, self.finish)
 
     def _fullname(self):
         # appFullName is set by the navigator; fall back for safety since a
-        # wrong path here would only cost us the logo, not the screen.
+        # wrong path here would only cost us the logo and the version.
         return getattr(self, "appFullName", None) or "org.zaptv.app"
 
-    def _app_version(self):
-        # Read from our own MANIFEST so the displayed version can never drift
-        # from the packaged one.
-        for path in ("apps/%s/MANIFEST.JSON" % self._fullname(),
-                     "apps/%s/META-INF/MANIFEST.JSON" % self._fullname()):
+    def _add_logo(self, screen):
+        """The family lockup, LOGO_H tall, or the app name if it will not
+        load."""
+        path = _res_path(self._fullname(), LOCKUP_IMAGE)
+        if path:
+            img = lv.image(screen)
             try:
-                with open(path) as f:
-                    return json.load(f).get("version", "?")
-            except Exception:
-                continue
-        return "?"
+                img.set_src(path)
+                img.update_layout()
+                w0, h0 = img.get_width(), img.get_height()
+                if w0 > 0 and h0 > 0:
+                    # set_scale only scales what is DRAWN: the widget keeps
+                    # reserving the native size, so its box is resized to
+                    # match, or the layout gains nothing.
+                    img.set_scale(LOGO_H * 256 // h0)
+                    img.set_size(w0 * LOGO_H // h0, LOGO_H)
+                    return
+            except Exception as e:
+                print("zaptv: about logo failed:", e)
+            img.delete()
+        label = lv.label(screen)
+        label.set_text("ZapTV")
+        label.set_style_text_font(_plain_font(28), lv.PART.MAIN)
 
-    def _os_version(self):
-        try:
-            from mpos import BuildInfo
-            return BuildInfo.version.release
-        except Exception:
-            return "?"
+    def _add_footer(self, screen, text):
+        # DisplayMetrics.width() - 100 wide and centred, which keeps every
+        # line clear of the 50 px back button in the bottom-right corner.
+        label = lv.label(screen)
+        label.set_text(text)
+        label.set_style_text_font(_plain_font(12), lv.PART.MAIN)
+        label.set_style_text_opa(lv.OPA._60, lv.PART.MAIN)
+        label.set_style_text_line_space(ABOUT_LINE_SPACE, lv.PART.MAIN)
+        label.set_long_mode(lv.label.LONG_MODE.WRAP)
+        label.set_width(DisplayMetrics.width() - 100)
+        label.set_style_text_align(lv.TEXT_ALIGN.CENTER, lv.PART.MAIN)
 
-    def _hardware(self):
-        try:
-            from mpos import DeviceInfo      # MPOS 0.13+
-            hw = DeviceInfo.hardware_id
-            # Desktop builds (and any board that doesn't register itself)
-            # leave the sentinel in place — don't show it to the user.
-            return "unknown" if not hw or hw == "missing-hardware-info" else hw
-        except Exception:
-            return "unknown"
+    def _add_fact(self, screen, name, value):
+        # A transparent full-width row: the name on the left, the value
+        # right-aligned in whatever width the name leaves.
+        row = lv.obj(screen)
+        row.set_width(lv.pct(100))
+        row.set_height(lv.SIZE_CONTENT)
+        row.set_style_bg_opa(lv.OPA.TRANSP, lv.PART.MAIN)
+        row.set_style_border_width(0, lv.PART.MAIN)
+        row.set_style_pad_all(0, lv.PART.MAIN)
+        row.set_style_pad_column(6, lv.PART.MAIN)
+        row.set_flex_flow(lv.FLEX_FLOW.ROW)
+        row.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
+        row.remove_flag(lv.obj.FLAG.SCROLLABLE)
+        row.set_flex_align(lv.FLEX_ALIGN.SPACE_BETWEEN, lv.FLEX_ALIGN.CENTER,
+                           lv.FLEX_ALIGN.CENTER)
+        left = lv.label(row)
+        left.set_text(name)
+        left.set_style_text_font(_plain_font(14), lv.PART.MAIN)
+        left.set_style_text_opa(lv.OPA._60, lv.PART.MAIN)
+        right = lv.label(row)
+        right.set_text(value)
+        right.set_style_text_font(_plain_font(14), lv.PART.MAIN)
+        # Board names run long (Waveshare ESP32 S3 Touch LCD 2); wrap rather
+        # than clip, since a half-shown board name is no use in a bug report.
+        right.set_long_mode(lv.label.LONG_MODE.WRAP)
+        right.set_style_text_line_space(ABOUT_LINE_SPACE, lv.PART.MAIN)
+        right.set_flex_grow(1)
+        right.set_style_text_align(lv.TEXT_ALIGN.RIGHT, lv.PART.MAIN)
 
 
 class MainSettingsActivity(_SettingsScreen):
@@ -1262,7 +1335,7 @@ class ZapTV(Activity):
              "ui": "activity", "activity_class": ProfileSettingsActivity},
             {"title": "Customise", "placeholder": "Denomination, theme",
              "ui": "activity", "activity_class": CustomiseSettingsActivity},
-            {"title": "About", "placeholder": "Version and web address",
+            {"title": "About", "placeholder": "Version, credits and licence",
              "ui": "activity", "activity_class": AboutActivity,
              "dont_persist": True},
         ])
