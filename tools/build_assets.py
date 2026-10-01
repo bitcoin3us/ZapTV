@@ -24,16 +24,18 @@ Outputs, under org.zaptv.app/:
     icon_64x64.png                  launcher icon (RGBA)
     res/mipmap-mdpi/icon_64x64.png  legacy copy of the icon (indexed)
     res/logo_tv.png                 welcome screen: the TV mark alone (RGBA)
-    res/splash_light.png            launch splash and About logo (RGBA)
-    res/splash_dark.png             the same image as splash_light.png
+    res/zaptv_lockup.png            launch splash and About logo (RGBA)
 
 The icon is the whole logo viewBox fitted to the tile width, 64x57 at y=3
 in a transparent 64x64 tile, the convention shared by the ZapTV family.
 The splash is the horizontal lockup: the TV mark on the left at 2.2x the
 wordmark's height, a gap of 0.35x that height, then the wordmark centred
 on the mark. One image serves both themes because the cream halo keeps the
-dark ink readable on a dark background; the two file names stay so the app
-can pick by theme without a code change if they ever differ again.
+dark ink readable on a dark background. When an output changes size, give
+it a new file name (and update zaptv.py): LVGL caches image headers by path
+until reboot, so a same-named file replaced in place is drawn at the old
+size with its rows wrapped. zaptv_lockup.png replaced splash_light.png and
+splash_dark.png for that reason.
 
 Each PNG keeps its colour mode. The legacy icon stays an indexed palette
 with transparency, because the lodepng in older MicroPythonOS builds
@@ -222,8 +224,7 @@ def main():
     changed |= write(icon, "icon_64x64.png", check)
     changed |= write(to_indexed(icon), "res/mipmap-mdpi/icon_64x64.png", check)
     changed |= write(build_logo_tv(big), "res/logo_tv.png", check)
-    changed |= write(splash, "res/splash_light.png", check)
-    changed |= write(splash, "res/splash_dark.png", check)
+    changed |= write(splash, "res/zaptv_lockup.png", check)
     if check:
         print("changes pending" if changed else "everything already current")
         sys.exit(1 if changed else 0)

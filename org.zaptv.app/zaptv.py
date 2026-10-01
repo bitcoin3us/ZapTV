@@ -136,13 +136,15 @@ MAX_ZAPS_LIMIT = 21
 BLINK_DURATION_MS = 30000
 BLINK_TICK_MS = 500
 
-# Branded splash shown once per app launch: the TV mark beside the ZAPTV
-# wordmark, rendered by tools/build_assets.py from the SVGs in artwork/.
-# res/splash_light.png and res/splash_dark.png hold the same image, since the
-# cream halo round the dark ink keeps it readable on either background; the
-# app still picks a file by theme, so the two can differ again without a code
-# change. They ship pre-scaled to 256 px wide: scaling a large source on the
-# device would waste several MB of RAM decoding it.
+# Branded splash shown once per app launch, and the About screen's logo: the
+# TV mark beside the ZAPTV wordmark, rendered by tools/build_assets.py from
+# the SVGs in artwork/. One image serves both themes, since the cream halo
+# round the dark ink reads on light and dark. It ships pre-scaled to 256 px
+# wide: scaling a large source on the device would waste several MB of RAM
+# decoding it. Artwork whose size changes needs a new file name: LVGL caches
+# image headers by path until reboot, so a same-named replacement installed
+# in place is drawn at the old size, its rows wrapped.
+LOCKUP_IMAGE = "zaptv_lockup.png"
 SPLASH_DURATION_MS = 2000
 
 # Snap the zap list back to the top after this long without any touch
@@ -241,12 +243,9 @@ class AboutActivity(Activity):
         screen.set_scroll_dir(lv.DIR.VER)
         screen.set_scrollbar_mode(lv.SCROLLBAR_MODE.OFF)
 
-        # Full ZapTV logo (TV mark and wordmark): reuse the splash artwork,
-        # through the same per-theme file name as the splash (both files
-        # currently hold one image that reads on light and dark).
+        # Full ZapTV logo (TV mark and wordmark), the splash artwork.
         logo = lv.image(screen)
-        logo.set_src("M:apps/" + self._fullname() + "/res/splash_"
-                     + ("dark" if dark else "light") + ".png")
+        logo.set_src("M:apps/" + self._fullname() + "/res/" + LOCKUP_IMAGE)
         # Box the artwork and let CONTAIN scale it down to fit. The earlier
         # logo, 96 px tall at native size, pushed the last line off a 240 px
         # screen, and the credit at the bottom is only worth adding if it can
@@ -649,12 +648,10 @@ class ZapTV(Activity):
             return
         self._splash_shown = True
         bg, _ = self._theme_colors()
-        dark = (self.prefs.get_string("theme") or "dark") != "light"
         self.splash.set_style_bg_color(bg, lv.PART.MAIN)
-        name = "splash_dark.png" if dark else "splash_light.png"
         try:
             self.splash_logo.set_src(
-                "M:apps/" + self.appFullName + "/res/" + name)
+                "M:apps/" + self.appFullName + "/res/" + LOCKUP_IMAGE)
         except Exception as e:
             print("zaptv: splash logo failed:", e)
         self.splash.remove_flag(lv.obj.FLAG.HIDDEN)
